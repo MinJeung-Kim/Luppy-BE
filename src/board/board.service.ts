@@ -165,6 +165,7 @@ export class BoardService {
       });
     } catch (error) {
       await qr.rollbackTransaction();
+      throw error;
     } finally {
       await qr.release();
     }
