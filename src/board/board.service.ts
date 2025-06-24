@@ -3,9 +3,10 @@ import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { Board } from './entity/board.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { BoardDetail } from './entity/board-detail.entity';
 import { User } from 'src/user/entity/user.entity';
+import { Tag } from 'src/tag/entity/tag.entity';
 
 @Injectable()
 export class BoardService {
@@ -16,22 +17,30 @@ export class BoardService {
     private readonly boardDetailRepository: Repository<BoardDetail>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Tag)
+    private readonly tagRepository: Repository<Tag>,
+    private readonly dataSource: DataSource,
   ) {}
 
-  findAll(title?: string) {
-    if (!title) {
-      return this.boardRepository.findAndCount();
+  async findAll(title?: string) {
+    // 쿼리빌더 =  복잡한 코드일 경우 유용함.
+    const qb = await this.boardRepository
+      .createQueryBuilder('board')
+      .leftJoinAndSelect('board.user', 'user')
+      .leftJoinAndSelect('board.tags', 'tags');
+
+    if (title) {
+      qb.where('board.title LIKE :title', { title: `%${title}%` });
     }
 
-    return this.boardRepository.findAndCount({
-      where: { title: Like(`%${title}%`) },
-    });
+    return qb.getManyAndCount();
   }
 
   async findOne(id: number) {
+    // 레포지토리 패턴
     const board = await this.boardRepository.findOne({
       where: { id },
-      relations: ['detail'],
+      relations: ['detail', 'user', 'tags'],
     });
 
     if (!board) {
@@ -41,47 +50,14 @@ export class BoardService {
   }
 
   async create(createBoardDto: CreateBoardDto) {
-    const { detail, userId, ...boardRest } = createBoardDto;
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
-    const user = await this.userRepository.findOne({
-      where: {
-        id: userId,
-      },
-    });
+    try {
+      const { detail, userId, tagIds, ...boardRest } = createBoardDto;
 
-    if (!user) {
-      throw new NotFoundException('존재하지 않는 ID의 유저 입니다.');
-    }
-
-    const boardDetail = await this.boardDetailRepository.save({
-      detail,
-    });
-
-    const board = await this.boardRepository.save({
-      ...boardRest,
-      detail: boardDetail,
-      user,
-    });
-
-    return board;
-  }
-
-  async update(id: number, updateBoardDto: UpdateBoardDto) {
-    const board = await this.boardRepository.findOne({
-      where: { id },
-      relations: ['detail'],
-    });
-
-    if (!board) {
-      throw new NotFoundException(`Board with id ${id} not found`);
-    }
-
-    const { detail, userId, ...boardRest } = updateBoardDto;
-
-    let newUser;
-
-    if (userId) {
-      const user = await this.userRepository.findOne({
+      const user = await qr.manager.findOne(User, {
         where: {
           id: userId,
         },
@@ -91,31 +67,107 @@ export class BoardService {
         throw new NotFoundException('존재하지 않는 ID의 유저 입니다.');
       }
 
-      newUser = user;
-    }
-
-    const userUpdateFields = {
-      ...boardRest,
-      ...(newUser && { user: newUser }),
-    };
-
-    await this.boardRepository.update({ id }, userUpdateFields);
-
-    if (detail) {
-      await this.boardDetailRepository.update(
-        {
-          id: board.detail.id,
+      const tags = await qr.manager.find(Tag, {
+        where: {
+          id: In(tagIds),
         },
-        { detail },
-      );
+      });
+
+      if (tags.length !== tagIds.length) {
+        throw new NotFoundException(
+          `존재하지 않는 태그가 있습니다. 존재하는 ids -> ${tags.map((tag) => tag.id).join(',')}`,
+        );
+      }
+
+      const boardDetail = qr.manager.create(BoardDetail, { detail });
+
+      await qr.manager.save(BoardDetail, boardDetail);
+
+      // Board 엔티티 인스턴스 생성 및 저장
+      const board = qr.manager.create(Board, {
+        ...boardRest,
+        detail: boardDetail,
+        user,
+        tags,
+      });
+
+      await qr.manager.save(Board, board);
+
+      await qr.commitTransaction();
+
+      return board;
+    } catch (e) {
+      await qr.rollbackTransaction();
+      throw e;
+    } finally {
+      await qr.release();
     }
+  }
 
-    const newBoard = await this.boardRepository.findOne({
-      where: { id },
-      relations: ['detail', 'user'],
-    });
+  async update(id: number, updateBoardDto: UpdateBoardDto) {
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
-    return newBoard;
+    try {
+      const board = await qr.manager.findOne(Board, {
+        where: { id },
+        relations: ['detail', 'user', 'tags'],
+      });
+
+      if (!board) {
+        throw new NotFoundException(`Board with id ${id} not found`);
+      }
+
+      const { detail, userId, tagIds, ...boardRest } = updateBoardDto;
+
+      if (userId) {
+        const user = await qr.manager.findOne(User, { where: { id: userId } });
+
+        if (!user) {
+          throw new NotFoundException('존재하지 않는 ID의 유저 입니다.');
+        }
+
+        board.user = user;
+      }
+
+      if (tagIds) {
+        const tags = await qr.manager.find(Tag, { where: { id: In(tagIds) } });
+
+        if (tags.length !== tagIds.length) {
+          throw new NotFoundException(
+            `존재하지 않는 태그가 있습니다. 존재하는 ids -> ${tags.map((tag) => tag.id).join(',')}`,
+          );
+        }
+
+        board.tags = tags;
+      }
+
+      Object.assign(board, boardRest);
+
+      if (detail) {
+        await qr.manager.update(
+          BoardDetail,
+          {
+            id: board.detail.id,
+          },
+          { detail },
+        );
+      }
+
+      await qr.manager.save(Board, board);
+
+      await qr.commitTransaction();
+
+      return this.boardRepository.findOne({
+        where: { id },
+        relations: ['detail', 'user', 'tags'],
+      });
+    } catch (error) {
+      await qr.rollbackTransaction();
+    } finally {
+      await qr.release();
+    }
   }
 
   async remove(id: number) {

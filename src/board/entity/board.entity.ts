@@ -1,8 +1,9 @@
-import { Transform } from 'class-transformer';
 import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -10,6 +11,7 @@ import {
 import { BaseTable } from '../../common/entity/base-table.entity';
 import { BoardDetail } from './board-detail.entity';
 import { User } from 'src/user/entity/user.entity';
+import { Tag } from 'src/tag/entity/tag.entity';
 
 /**
  * ManyToOne : User -> 사용자는 여러개의 게시물을 만들 수 있음
@@ -25,17 +27,19 @@ export class Board extends BaseTable {
   @Column()
   title: string;
 
-  @Column('json')
-  @Transform(({ value }) => {
-    value.toString().toUpperCase();
-  })
-  tags: string[];
+  @ManyToMany(
+    () => Tag, //
+    (tag) => tag.boards,
+  )
+  @JoinTable()
+  tags: Tag[];
 
   @OneToOne(
     () => BoardDetail, //
     (boardDetail) => boardDetail.id,
     {
       cascade: true,
+      nullable: false,
     },
   )
   @JoinColumn()
@@ -46,6 +50,7 @@ export class Board extends BaseTable {
     (user) => user.id,
     {
       cascade: true,
+      nullable: false,
     },
   )
   user: User;

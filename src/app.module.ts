@@ -3,6 +3,7 @@ import { BoardModule } from './board/board.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
+import { TagModule } from './tag/tag.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -37,6 +38,7 @@ import * as Joi from 'joi';
     }),
     BoardModule,
     UserModule,
+    TagModule,
   ],
 })
 export class AppModule {}

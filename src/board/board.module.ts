@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Board } from './entity/board.entity';
 import { BoardDetail } from './entity/board-detail.entity';
 import { User } from 'src/user/entity/user.entity';
+import { Tag } from 'src/tag/entity/tag.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Board, BoardDetail, User])],
+  imports: [TypeOrmModule.forFeature([Board, BoardDetail, User, Tag])],
   controllers: [BoardController],
   providers: [BoardService],
 })
