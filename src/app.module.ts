@@ -6,6 +6,7 @@ import { UserModule } from './user/user.module';
 import { TagModule } from './tag/tag.module';
 import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
+import { envVariables } from './common/const/env.const';
 
 @Module({
   imports: [
@@ -29,12 +30,12 @@ import * as Joi from 'joi';
     // ConfigModule의 설정 값을 기반으로 TypeORM 모듈을 비동기로 설정
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        type: configService.get<string>('DB_TYPE') as 'mysql',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
+        type: configService.get<string>(envVariables.dbType) as 'mysql',
+        host: configService.get<string>(envVariables.dbHost),
+        port: configService.get<number>(envVariables.dbPort),
+        username: configService.get<string>(envVariables.dbUsername),
+        password: configService.get<string>(envVariables.dbPassword),
+        database: configService.get<string>(envVariables.dbDatabase),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로
         synchronize: true, // 개발 환경에서만 사용, 프로덕션에서는 false로 설정
       }),
