@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { TagModule } from './tag/tag.module';
+import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -20,6 +21,9 @@ import * as Joi from 'joi';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
+        HASH_ROUNDS: Joi.number().required(),
+        ACCESS_TOKEN_SECRET: Joi.string().required(),
+        REFRESH_TOKEN_SECRET: Joi.string().required(),
       }),
     }),
     // ConfigModule의 설정 값을 기반으로 TypeORM 모듈을 비동기로 설정
@@ -39,6 +43,7 @@ import * as Joi from 'joi';
     BoardModule,
     UserModule,
     TagModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

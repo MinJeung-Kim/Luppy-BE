@@ -16,10 +16,16 @@ export class UserService {
     return this.userRepository.findAndCount();
   }
 
-  findOne(id: number) {
-    return this.userRepository.findOne({
+  async findOne(id: number) {
+    const user = await this.userRepository.findOne({
       where: { id },
     });
+
+    if (!user) {
+      throw new NotFoundException('존재하지 않는 사용자 입니다.');
+    }
+
+    return user;
   }
 
   create(createUserDto: CreateUserDto) {
@@ -42,11 +48,9 @@ export class UserService {
       { ...updateUserDto },
     );
 
-    const newUser = await this.userRepository.findOne({
+    return this.userRepository.findOne({
       where: { id },
     });
-
-    return newUser;
   }
 
   async remove(id: number) {

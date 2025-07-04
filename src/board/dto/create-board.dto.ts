@@ -7,16 +7,16 @@ import {
 } from 'class-validator';
 
 export class CreateBoardDto {
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   title: string;
 
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   detail: string;
 
-  @IsNumber()
   @IsNotEmpty()
+  @IsNumber()
   userId: number;
 
   @IsArray()
