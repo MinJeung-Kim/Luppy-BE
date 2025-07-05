@@ -1,12 +1,18 @@
-import { Module } from '@nestjs/common';
-import { BoardModule } from './board/board.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as Joi from 'joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
+import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
+import { envVariables } from './common/const/env.const';
+import { BoardModule } from './board/board.module';
+import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TagModule } from './tag/tag.module';
-import { AuthModule } from './auth/auth.module';
-import * as Joi from 'joi';
-import { envVariables } from './common/const/env.const';
 
 @Module({
   imports: [
@@ -47,4 +53,20 @@ import { envVariables } from './common/const/env.const';
     AuthModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(BearerTokenMiddleware)
+      .exclude(
+        {
+          path: 'auth/login',
+          method: RequestMethod.POST,
+        },
+        {
+          path: 'auth/register',
+          method: RequestMethod.POST,
+        },
+      )
+      .forRoutes('*');
+  }
+}

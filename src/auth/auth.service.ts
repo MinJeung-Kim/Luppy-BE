@@ -72,7 +72,11 @@ export class AuthService {
     try {
       // verify =>  token 검증
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>(envVariables.refreshTokenSecret),
+        secret: this.configService.get<string>(
+          isRefreshToken
+            ? envVariables.refreshTokenSecret
+            : envVariables.accessTokenSecret,
+        ),
       });
 
       if (isRefreshToken) {
