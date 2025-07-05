@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
 import { envVariables } from './common/const/env.const';
+import { AuthGuard } from './auth/guard/auth.guard';
 import { BoardModule } from './board/board.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
@@ -52,6 +53,7 @@ import { TagModule } from './tag/tag.module';
     TagModule,
     AuthModule,
   ],
+  providers: [{ provide: 'APP_GUARD', useClass: AuthGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
