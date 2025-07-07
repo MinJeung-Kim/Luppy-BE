@@ -1,3 +1,5 @@
+import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,11 +8,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { Role, User } from 'src/user/entity/user.entity';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { envVariables } from 'src/common/const/env.const';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {

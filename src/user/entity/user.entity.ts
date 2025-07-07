@@ -4,9 +4,9 @@ import { BaseTable } from 'src/common/entity/base-table.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum Role {
-  admin = 'admin',
-  paidUser = 'paidUser',
-  user = 'user',
+  admin = 0,
+  paidUser = 1,
+  user = 2,
 }
 
 @Entity()

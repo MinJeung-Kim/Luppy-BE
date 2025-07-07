@@ -7,6 +7,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { RbacGuard } from './auth/guard/rbac.guard';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
 import { envVariables } from './common/const/env.const';
 import { AuthGuard } from './auth/guard/auth.guard';
@@ -53,7 +54,10 @@ import { TagModule } from './tag/tag.module';
     TagModule,
     AuthModule,
   ],
-  providers: [{ provide: 'APP_GUARD', useClass: AuthGuard }],
+  providers: [
+    { provide: 'APP_GUARD', useClass: AuthGuard },
+    { provide: 'RBAC_GUARD', useClass: RbacGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
