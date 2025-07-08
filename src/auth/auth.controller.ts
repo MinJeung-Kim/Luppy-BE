@@ -43,4 +43,16 @@ export class AuthController {
       accessToken: await this.authService.issueToken(req.user, false),
     };
   }
+
+  @Post('/logout')
+  async logout(@Res() res: Response) {
+    // ✅ refresh_token 쿠키 삭제
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+
+    res.status(200).json({ message: 'Logged out' });
+  }
 }
