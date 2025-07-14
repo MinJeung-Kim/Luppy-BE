@@ -22,7 +22,14 @@ export class TagService {
     });
   }
 
-  create(createTagDto: CreateTagDto) {
+  async create(createTagDto: CreateTagDto) {
+    const tag = await this.tagRepository.findOne({
+      where: { name: createTagDto.name },
+    });
+
+    if (tag) {
+      throw new NotFoundException(`이미 존재하는 태그(${name}) 입니다.`);
+    }
     return this.tagRepository.save(createTagDto);
   }
 

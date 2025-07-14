@@ -15,6 +15,8 @@ import { BoardModule } from './board/board.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TagModule } from './tag/tag.module';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseTimeInterceptor } from './common/interceptor/response-time.interceptor';
 
 @Module({
   imports: [
@@ -55,8 +57,9 @@ import { TagModule } from './tag/tag.module';
     AuthModule,
   ],
   providers: [
-    { provide: 'APP_GUARD', useClass: AuthGuard },
-    { provide: 'RBAC_GUARD', useClass: RbacGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: RbacGuard },
+    { provide: APP_INTERCEPTOR, useClass: ResponseTimeInterceptor },
   ],
 })
 export class AppModule implements NestModule {
