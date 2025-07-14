@@ -48,8 +48,13 @@ export class BoardController {
 
   @Patch(':id')
   @RBAC(Role.admin)
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateBoardDto) {
-    return this.boardService.update(id, body);
+  @UseInterceptors(TransactionInterceptor)
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateBoardDto,
+    @Request() res,
+  ) {
+    return this.boardService.update(id, body, res.queryRunner);
   }
 
   @Delete(':id')

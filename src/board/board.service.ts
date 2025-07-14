@@ -1,15 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
-import { Board } from './entity/board.entity';
+import { GetBoardsDto } from './dto/get-boards.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, QueryRunner, Repository } from 'typeorm';
+import { CommonService } from 'src/common/common.service';
 import { BoardDetail } from './entity/board-detail.entity';
 import { User } from 'src/user/entity/user.entity';
 import { Tag } from 'src/tag/entity/tag.entity';
-import { GetBoardsDto } from './dto/get-boards.dto';
-import { CommonService } from 'src/common/common.service';
-import { Query } from 'mysql2/typings/mysql/lib/protocol/sequences/Query';
+import { Board } from './entity/board.entity';
 
 @Injectable()
 export class BoardService {
@@ -97,71 +96,58 @@ export class BoardService {
     return board;
   }
 
-  async update(id: number, updateBoardDto: UpdateBoardDto) {
-    const qr = this.dataSource.createQueryRunner();
-    await qr.connect();
-    await qr.startTransaction();
+  async update(id: number, updateBoardDto: UpdateBoardDto, qr: QueryRunner) {
+    const board = await qr.manager.findOne(Board, {
+      where: { id },
+      relations: ['detail', 'user', 'tags'],
+    });
 
-    try {
-      const board = await qr.manager.findOne(Board, {
-        where: { id },
-        relations: ['detail', 'user', 'tags'],
-      });
+    if (!board) {
+      throw new NotFoundException(`Board with id ${id} not found`);
+    }
 
-      if (!board) {
-        throw new NotFoundException(`Board with id ${id} not found`);
+    const { detail, userId, tagIds, ...boardRest } = updateBoardDto;
+
+    if (userId) {
+      const user = await qr.manager.findOne(User, { where: { id: userId } });
+
+      if (!user) {
+        throw new NotFoundException('존재하지 않는 ID의 유저 입니다.');
       }
 
-      const { detail, userId, tagIds, ...boardRest } = updateBoardDto;
+      board.user = user;
+    }
 
-      if (userId) {
-        const user = await qr.manager.findOne(User, { where: { id: userId } });
+    if (tagIds) {
+      const tags = await qr.manager.find(Tag, { where: { id: In(tagIds) } });
 
-        if (!user) {
-          throw new NotFoundException('존재하지 않는 ID의 유저 입니다.');
-        }
-
-        board.user = user;
-      }
-
-      if (tagIds) {
-        const tags = await qr.manager.find(Tag, { where: { id: In(tagIds) } });
-
-        if (tags.length !== tagIds.length) {
-          throw new NotFoundException(
-            `존재하지 않는 태그가 있습니다. 존재하는 ids -> ${tags.map((tag) => tag.id).join(',')}`,
-          );
-        }
-
-        board.tags = tags;
-      }
-
-      Object.assign(board, boardRest);
-
-      if (detail) {
-        await qr.manager.update(
-          BoardDetail,
-          {
-            id: board.detail.id,
-          },
-          { detail },
+      if (tags.length !== tagIds.length) {
+        throw new NotFoundException(
+          `존재하지 않는 태그가 있습니다. 존재하는 ids -> ${tags.map((tag) => tag.id).join(',')}`,
         );
       }
 
-      await qr.manager.save(Board, board);
-
-      await qr.commitTransaction();
-
-      return this.boardRepository.findOne({
-        where: { id },
-        relations: ['detail', 'user', 'tags'],
-      });
-    } catch (error) {
-      await qr.rollbackTransaction();
-      throw error;
-    } finally {
-      await qr.release();
+      board.tags = tags;
     }
+
+    Object.assign(board, boardRest);
+
+    if (detail) {
+      await qr.manager.update(
+        BoardDetail,
+        {
+          id: board.detail.id,
+        },
+        { detail },
+      );
+    }
+
+    await qr.manager.save(Board, board);
+
+    return this.boardRepository.findOne({
+      where: { id },
+      relations: ['detail', 'user', 'tags'],
+    });
   }
 
   async remove(id: number) {
