@@ -1,7 +1,15 @@
 import { Exclude } from 'class-transformer';
 import { Board } from 'src/board/entity/board.entity';
+import { ChatRoom } from 'src/chat/entity/chat-room.entity';
+import { Chat } from 'src/chat/entity/chat.entity';
 import { BaseTable } from 'src/common/entity/base-table.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 export enum Role {
   admin = 0,
@@ -38,4 +46,16 @@ export class User extends BaseTable {
     (board) => board.user,
   )
   boards: Board;
+
+  @OneToMany(
+    () => Chat, //
+    (chat) => chat.author,
+  )
+  chats: Chat[];
+
+  @ManyToMany(
+    () => ChatRoom, //
+    (chatRoom) => chatRoom.users,
+  )
+  chatRooms: ChatRoom[];
 }
