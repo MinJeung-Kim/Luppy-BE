@@ -41,7 +41,7 @@ export class User extends BaseTable {
   @Column({ type: 'enum', enum: Role, default: Role.user })
   role: Role;
 
-  @Column()
+  @Column({ unique: true })
   phone: string;
 
   @OneToMany(

@@ -7,12 +7,12 @@ import {
   WebSocketGateway,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
+import { QueryRunner } from 'typeorm';
 import { ChatService } from './chat.service';
 import { AuthService } from 'src/auth/auth.service';
 import { UseInterceptors } from '@nestjs/common';
 import { WsTransactionInterceptor } from 'src/common/interceptor/ws-transaction.interceptor';
 import { WsQueryRunner } from 'src/common/decorator/ws-query-runner.decorator';
-import { QueryRunner } from 'typeorm';
 import { CreateChatDto } from './dto/create-chat.dto';
 
 @WebSocketGateway()
@@ -20,7 +20,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   handleDisconnect(client: Socket) {
     // 클라이언트가 연결을 끊었을 때 실행되는 로직
