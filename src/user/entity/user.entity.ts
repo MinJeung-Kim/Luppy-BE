@@ -35,6 +35,9 @@ export class User extends BaseTable {
   @Column()
   name: string;
 
+  @Column()
+  profile: string;
+
   @Column({ type: 'enum', enum: Role, default: Role.user })
   role: Role;
 
