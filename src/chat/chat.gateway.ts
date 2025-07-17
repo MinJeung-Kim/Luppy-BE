@@ -14,8 +14,11 @@ import { UseInterceptors } from '@nestjs/common';
 import { WsTransactionInterceptor } from 'src/common/interceptor/ws-transaction.interceptor';
 import { WsQueryRunner } from 'src/common/decorator/ws-query-runner.decorator';
 import { CreateChatDto } from './dto/create-chat.dto';
+import { corsOptions } from 'src/utils/cors-options';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: corsOptions,
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
@@ -23,6 +26,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) { }
 
   handleDisconnect(client: Socket) {
+    console.log(`Client disconnected: ${client.id}`);
     // 클라이언트가 연결을 끊었을 때 실행되는 로직
     const user = client.data.user;
     if (user) {
@@ -31,9 +35,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleConnection(client: Socket) {
+    console.log(`Client connected: ${client.id}`);
     // 클라이언트가 연결을 시도했을 때 실행되는 로직
     try {
-      const rawToken = client.handshake.headers.authorization;
+      const rawToken = client.handshake.auth.token;
       if (!rawToken) {
         client.disconnect();
         return;
