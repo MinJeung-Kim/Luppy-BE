@@ -6,7 +6,7 @@ import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post('/register')
@@ -24,7 +24,7 @@ export class AuthController {
     @Headers('authorization') token: string,
     @Res() res: Response,
   ) {
-    const { refreshToken, accessToken } = await this.authService.login(token);
+    const { refreshToken, accessToken, user } = await this.authService.login(token);
     // ✅ refreshToken을 HttpOnly 쿠키로 설정
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
@@ -34,13 +34,15 @@ export class AuthController {
     });
 
     // ✅ accessToken은 JSON 응답으로 클라이언트에 전달
-    res.json({ accessToken });
+    res.json({ accessToken, user });
   }
 
   @Post('token/access')
   async rotateAccessToken(@Request() req) {
+    const { id, role } = req.user;
+
     return {
-      accessToken: await this.authService.issueToken(req.user, false),
+      accessToken: await this.authService.issueToken(id, role, false),
     };
   }
 

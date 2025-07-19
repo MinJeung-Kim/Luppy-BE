@@ -19,7 +19,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   // rawToken => Basic $token
   parseBasicToken(rawToken: string) {
@@ -146,7 +146,7 @@ export class AuthService {
     return user;
   }
 
-  async issueToken(user: { id: number; role: Role }, isRefreshToken: boolean) {
+  async issueToken(id: number, role: Role, isRefreshToken: boolean) {
     const refreshTokenSecret = this.configService.get<string>(
       envVariables.refreshTokenSecret,
     );
@@ -157,8 +157,8 @@ export class AuthService {
     return this.jwtService.signAsync(
       {
         // payload
-        sub: user.id,
-        role: user.role,
+        sub: id,
+        role: role,
         type: isRefreshToken ? 'refresh' : 'access',
       },
       {
@@ -172,11 +172,24 @@ export class AuthService {
   async login(rawToken: string) {
     const { email, password } = this.parseBasicToken(rawToken);
 
-    const user = await this.authenticate(email, password);
+    const { id, role } = await this.authenticate(email, password);
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new BadRequestException('사용자를 찾을 수 없습니다.');
+    }
 
     return {
-      refreshToken: await this.issueToken(user, true),
-      accessToken: await this.issueToken(user, false),
+      refreshToken: await this.issueToken(id, role, true),
+      accessToken: await this.issueToken(id, role, false),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+      }
     };
   }
 }
