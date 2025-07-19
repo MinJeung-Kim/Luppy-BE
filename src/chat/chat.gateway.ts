@@ -49,7 +49,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (payload) {
         client.data.user = payload;
         this.chatService.registerClient(payload.sub, client);
-        await this.chatService.joinUserRooms(payload, client);
+        // await this.chatService.joinUserRooms(payload, client);
       } else {
         client.disconnect();
         return;
@@ -59,6 +59,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       client.disconnect();
     }
+  }
+
+  @SubscribeMessage('createChatRoom')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleCreateChatRoom(
+    @MessageBody() body: CreateChatDto,
+    @ConnectedSocket() client: Socket,
+    @WsQueryRunner() qr: QueryRunner,
+  ) {
+    await this.chatService.createChatRoom(body, qr);
   }
 
   @SubscribeMessage('sendMessage')

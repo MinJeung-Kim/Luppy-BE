@@ -20,7 +20,7 @@ export class ChatService {
     private readonly chatRepository: Repository<Chat>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   registerClient(userId: number, client: Socket) {
     this.connectedClients.set(userId, client);
@@ -43,6 +43,14 @@ export class ChatService {
     });
   }
 
+  async createChatRoom(body: CreateChatDto,
+    qr: QueryRunner,) {
+    const { userIds } = body;
+    console.log('userIds:', userIds); // 디버깅용 로그
+
+
+  }
+
   async createMessage(
     payload: { sub: number },
     body: CreateChatDto,
@@ -52,6 +60,8 @@ export class ChatService {
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
     });
+
+
     if (!user) {
       throw new WsException('사용자를 찾을 수 없습니다.');
     }
