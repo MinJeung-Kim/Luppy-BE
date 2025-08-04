@@ -68,7 +68,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @WsQueryRunner() qr: QueryRunner,
   ) {
-    await this.chatService.createChatRoom(body, qr);
+    await this.chatService.createChatRoom(body, client, qr);
   }
 
   @SubscribeMessage('sendMessage')

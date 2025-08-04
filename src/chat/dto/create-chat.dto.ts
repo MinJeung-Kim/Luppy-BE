@@ -8,8 +8,10 @@ export class CreateChatDto {
   @IsOptional()
   room?: number;
 
+  @IsString()
+  host: string;
+
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
-  userIds?: string[];
+  guest: string[];
 }

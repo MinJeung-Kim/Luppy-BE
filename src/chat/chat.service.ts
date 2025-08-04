@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { WsException } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Socket } from 'socket.io';
+import { plainToClass } from 'class-transformer';
 import { QueryRunner, Repository } from 'typeorm';
+import { Socket } from 'socket.io';
 import { Chat } from './entity/chat.entity';
 import { ChatRoom } from './entity/chat-room.entity';
-import { Role, User } from 'src/user/entity/user.entity';
 import { CreateChatDto } from './dto/create-chat.dto';
-import { WsException } from '@nestjs/websockets';
-import { plainToClass } from 'class-transformer';
+import { Role, User } from 'src/user/entity/user.entity';
 
 @Injectable()
 export class ChatService {
@@ -43,12 +43,60 @@ export class ChatService {
     });
   }
 
-  async createChatRoom(body: CreateChatDto,
-    qr: QueryRunner,) {
-    const { userIds } = body;
-    console.log('userIds:', userIds); // 디버깅용 로그
+  async createChatRoom(body: CreateChatDto, client: Socket, qr: QueryRunner) {
+    const { host, guest } = body;
+    console.log('host, guest : ', host, guest); // 디버깅용 로그
+
+    // host와 guest를 User 엔티티로 변환
+    const hostUser = await qr.manager.findOne(User, {
+      where: { id: parseInt(host) }
+    });
+
+    const guestUsers = await Promise.all(
+      guest.map(guestId =>
+        qr.manager.findOne(User, { where: { id: parseInt(guestId) } })
+      )
+    );
+
+    if (!hostUser) {
+      throw new WsException('호스트 사용자를 찾을 수 없습니다.');
+    }
+
+    const validGuestUsers = guestUsers.filter(user => user !== null);
+    if (validGuestUsers.length !== guest.length) {
+      throw new WsException('일부 게스트 사용자를 찾을 수 없습니다.');
+    }
+
+    const chatRoom = await qr.manager.save(ChatRoom, {
+      host: hostUser,
+      hostId: hostUser.id,
+      users: [hostUser, ...validGuestUsers],
+    });
+
+    // 필요한 사용자 정보만 선택해서 전송
+    const hostInfo = {
+      id: hostUser.id,
+      email: hostUser.email,
+      name: hostUser.name,
+      profile: hostUser.profile,
+      role: hostUser.role,
+      phone: hostUser.phone
+    };
+
+    const guestInfos = validGuestUsers.map(user => ({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      profile: user.profile,
+      role: user.role,
+      phone: user.phone
+    }));
+
+    client.emit('roomCreated', { host: hostInfo, guests: guestInfos });
+    console.log('Chat room created:', hostInfo, guestInfos); // 디버깅용 로그
 
 
+    // return chatRoom;
   }
 
   async createMessage(
