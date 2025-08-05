@@ -96,7 +96,7 @@ export class ChatService {
     console.log('Chat room created:', hostInfo, guestInfos); // 디버깅용 로그
 
 
-    // return chatRoom;
+    return chatRoom;
   }
 
   async createMessage(
@@ -175,5 +175,38 @@ export class ChatService {
     }
 
     return chatRoom;
+  }
+
+  /**
+   * API to get the list of chat rooms
+   */
+
+  getChatList() {
+    // roomId, host, guests, createdAt
+
+    // 모든 방의 정보를 가져오고, 필요한 관계를 포함하여 반환
+    // 여기서 'guests'는 방에 참여한 사용자들을 나타내며, 'host'는 방의 호스트를 나타냅니다.
+    // 'createdAt'은 방이 생성된 시간을 나타냅니다.
+
+    return this.chatRoomRepository.findAndCount({
+      select: {
+        id: true,
+        createdAt: true,
+        host: {
+          id: true,
+          name: true,
+          email: true,
+          profile: true,
+        },
+        users: {
+          id: true,
+          name: true,
+          email: true,
+          profile: true,
+        }
+      },
+      relations: ['users', 'host'],
+      order: { createdAt: 'DESC' },
+    });
   }
 }
