@@ -181,32 +181,41 @@ export class ChatService {
    * API to get the list of chat rooms
    */
 
-  getChatList() {
+  getChatList(userId: number) {
     // roomId, host, guests, createdAt
 
-    // 모든 방의 정보를 가져오고, 필요한 관계를 포함하여 반환
-    // 여기서 'guests'는 방에 참여한 사용자들을 나타내며, 'host'는 방의 호스트를 나타냅니다.
-    // 'createdAt'은 방이 생성된 시간을 나타냅니다.
+    // userId가 호스트이거나 게스트로 속해있는 채팅방만 필터링하여 반환
+    // 'users' 관계를 통해 해당 사용자가 포함된 방을 찾습니다.
 
-    return this.chatRoomRepository.findAndCount({
-      select: {
-        id: true,
-        createdAt: true,
-        host: {
-          id: true,
-          name: true,
-          email: true,
-          profile: true,
-        },
-        users: {
-          id: true,
-          name: true,
-          email: true,
-          profile: true,
-        }
-      },
-      relations: ['users', 'host'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .leftJoinAndSelect('chatRoom.host', 'host')
+      .leftJoinAndSelect('chatRoom.users', 'users')
+      .innerJoin('chatRoom.users', 'filterUser', 'filterUser.id = :userId', { userId })
+      .select([
+        'chatRoom.id',
+        'chatRoom.createdAt',
+        'host.id',
+        'host.name',
+        'host.email',
+        'host.profile',
+        'users.id',
+        'users.name',
+        'users.email',
+        'users.profile'
+      ])
+      .orderBy('chatRoom.createdAt', 'DESC')
+      .getManyAndCount();
+  }
+
+  getChatRoom(chatRoomId: string) {
+    // roomId에 해당하는 채팅 내용을 가져옵니다.
+    return this.chatRepository
+      .createQueryBuilder('chat')
+      .leftJoinAndSelect('chat.chatRoom', 'chatRoom')
+      .leftJoinAndSelect('chat.author', 'author')
+      .where('chatRoom.id = :chatRoomId', { chatRoomId })
+      .orderBy('chat.createdAt', 'ASC')
+      .getMany();
   }
 }
