@@ -1,11 +1,3 @@
-
-import { randomUUID } from 'crypto';
-if (!globalThis.crypto) {
-  globalThis.crypto = {
-    randomUUID,
-  } as Crypto;
-}
-
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { corsOptions } from './utils/cors-options';
