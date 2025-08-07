@@ -1,13 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { corsOptions } from './utils/cors-options';
-import { AppModule } from './app.module';
+
 import { randomUUID } from 'crypto';
 if (!globalThis.crypto) {
   globalThis.crypto = {
     randomUUID,
   } as Crypto;
 }
+
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { corsOptions } from './utils/cors-options';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
