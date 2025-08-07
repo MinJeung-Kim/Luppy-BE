@@ -10,7 +10,7 @@ export const corsOptions = {
     }
 
     // 운영 환경에서는 특정 도메인만 허용
-    const allowedOrigins = ['https://mydomain.com', 'https://www.mydomain.com'];
+    const allowedOrigins = ['https://luppy-fe.vercel.app/'];
 
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
