@@ -49,7 +49,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (payload) {
         client.data.user = payload;
         this.chatService.registerClient(payload.sub, client);
-        // await this.chatService.joinUserRooms(payload, client);
+        await this.chatService.joinUserRooms(payload, client);
       } else {
         client.disconnect();
         return;

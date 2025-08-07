@@ -6,7 +6,7 @@ export class CreateChatDto {
 
   @IsNumber()
   @IsOptional()
-  room?: number;
+  roomId?: number;
 
   @IsString()
   host: string;

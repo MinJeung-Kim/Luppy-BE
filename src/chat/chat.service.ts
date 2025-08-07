@@ -44,6 +44,7 @@ export class ChatService {
   }
 
   async createChatRoom(body: CreateChatDto, client: Socket, qr: QueryRunner) {
+    // const { host, guest } = body;
     const { host, guest } = body;
     console.log('host, guest : ', host, guest); // 디버깅용 로그
 
@@ -104,7 +105,7 @@ export class ChatService {
     body: CreateChatDto,
     qr: QueryRunner,
   ) {
-    const { room, message } = body;
+    const { roomId, message } = body;
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
     });
@@ -114,22 +115,35 @@ export class ChatService {
       throw new WsException('사용자를 찾을 수 없습니다.');
     }
 
-    const chatRoom = await this.getOrCreateChatRoom(user, qr, room);
+    const chatRoom = await qr.manager.findOne(ChatRoom, {
+      where: { id: roomId },
+      relations: ['users'],
+    });
+
+    // const chatRoom = await this.getOrCreateChatRoom(user, qr, roomId);
 
     if (!chatRoom) {
       throw new WsException('채팅방을 찾을 수 없습니다.');
     }
 
     const msgModal = await qr.manager.save(Chat, {
-      author: user,
+      author: { id: user.id, email: user.email, name: user.name, profile: user.profile },
       message,
-      chatRoom,
+      chatRoom: {
+        id: chatRoom.id,
+        hostId: chatRoom.hostId,
+        createdAt: chatRoom.createdAt,
+      },
     });
 
     const client = this.connectedClients.get(user.id);
     client
       ?.to(`chatRoom/${chatRoom.id.toString()}`)
       .emit('sendMessage', plainToClass(Chat, msgModal));
+    client?.emit('sendMessage', plainToClass(Chat, msgModal)); // 본인에게도 전송
+
+    console.log(`Message sent in room ${chatRoom.id}:`, msgModal); // 디버깅용 로그
+
 
     return message;
   }
