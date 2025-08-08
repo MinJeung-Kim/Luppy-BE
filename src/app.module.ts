@@ -53,23 +53,23 @@ import { ChatModule } from './chat/chat.module';
           otherwise: Joi.optional(),
         }),
         // 운영 환경용 DB 설정
-        PROD_DB_HOST: Joi.string().when('ENV', {
+        MYSQL_PUBLIC_URL: Joi.string().when('ENV', {
           is: 'prod',
           then: Joi.required(),
           otherwise: Joi.optional(),
         }),
-        PROD_DB_PORT: Joi.number().default(3306),
-        PROD_DB_USERNAME: Joi.string().when('ENV', {
+        MYSQLPORT: Joi.number().default(3306),
+        MYSQLUSER: Joi.string().when('ENV', {
           is: 'prod',
           then: Joi.required(),
           otherwise: Joi.optional(),
         }),
-        PROD_DB_PASSWORD: Joi.string().when('ENV', {
+        MYSQL_ROOT_PASSWORD: Joi.string().when('ENV', {
           is: 'prod',
           then: Joi.required(),
           otherwise: Joi.optional(),
         }),
-        PROD_DB_DATABASE: Joi.string().when('ENV', {
+        MYSQL_DATABASE: Joi.string().when('ENV', {
           is: 'prod',
           then: Joi.required(),
           otherwise: Joi.optional(),
