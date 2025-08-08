@@ -1,5 +1,5 @@
 import { Controller, Post, Headers, Body, Request, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Response as ExpressResponse } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { Public } from './decorator/public.decorator';
@@ -22,7 +22,7 @@ export class AuthController {
   @Post('/login')
   async loginUser(
     @Headers('authorization') token: string,
-    @Res() res: Response,
+    @Res({ passthrough: false }) res: ExpressResponse,
   ) {
     const { refreshToken, accessToken, user } = await this.authService.login(token);
     // ✅ refreshToken을 HttpOnly 쿠키로 설정
@@ -47,7 +47,7 @@ export class AuthController {
   }
 
   @Post('/logout')
-  async logout(@Res() res: Response) {
+  async logout(@Res({ passthrough: false }) res: ExpressResponse) {
     // ✅ refresh_token 쿠키 삭제
     res.clearCookie('refresh_token', {
       httpOnly: true,

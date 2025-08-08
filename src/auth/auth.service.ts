@@ -165,7 +165,7 @@ export class AuthService {
       {
         secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
         // 만료 시간
-        expiresIn: isRefreshToken ? '24h' : 300,
+        expiresIn: isRefreshToken ? '24h' : '5m',
       },
     );
   }
