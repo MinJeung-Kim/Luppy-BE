@@ -26,7 +26,7 @@ import { ChatModule } from './chat/chat.module';
     ConfigModule.forRoot({
       isGlobal: true, // 환경 변수를 전역으로 사용 가능하게 설정
       envFilePath: '.env', // 환경 변수 파일 경로
-      ignoreEnvFile: process.env.NODE_ENV === 'prod', // 프로덕션 환경에서는 .env 파일을 무시
+      ignoreEnvFile: process.env.ENV === 'prod', // 프로덕션 환경에서는 .env 파일을 무시
       validationSchema: Joi.object({
         ENV: Joi.string().valid('dev', 'prod').default('dev'),
         DB_TYPE: Joi.string().valid('mysql').required(),
