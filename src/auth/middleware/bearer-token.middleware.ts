@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Response, NextFunction as ExpressNextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { envVariables } from 'src/common/const/env.const';
 import { RequestWithUser } from 'src/types/request';
 
@@ -17,7 +17,7 @@ export class BearerTokenMiddleware implements NestMiddleware {
     private readonly jwtService: JwtService,
   ) { }
 
-  async use(req: RequestWithUser, res: Response, next: ExpressNextFunction) {
+  async use(req: RequestWithUser, res: Response, next: NextFunction) {
     // Basic $token
     // Bearer $token
     const authHeader = req.headers['authorization'];

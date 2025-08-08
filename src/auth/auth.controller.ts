@@ -1,5 +1,5 @@
-import { Controller, Post, Headers, Body, Request, Res, HttpCode } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Headers, Body, Request, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { Public } from './decorator/public.decorator';
