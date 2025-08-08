@@ -30,11 +30,50 @@ import { ChatModule } from './chat/chat.module';
       validationSchema: Joi.object({
         ENV: Joi.string().valid('dev', 'prod').default('dev'),
         DB_TYPE: Joi.string().valid('mysql').required(),
-        DB_HOST: Joi.string().required(),
+        // 개발 환경용 DB 설정
+        DB_HOST: Joi.string().when('ENV', {
+          is: 'dev',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
         DB_PORT: Joi.number().default(3306),
-        DB_USERNAME: Joi.string().required(),
-        DB_PASSWORD: Joi.string().required(),
-        DB_DATABASE: Joi.string().required(),
+        DB_USERNAME: Joi.string().when('ENV', {
+          is: 'dev',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        DB_PASSWORD: Joi.string().when('ENV', {
+          is: 'dev',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        DB_DATABASE: Joi.string().when('ENV', {
+          is: 'dev',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        // 운영 환경용 DB 설정
+        PROD_DB_HOST: Joi.string().when('ENV', {
+          is: 'prod',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        PROD_DB_PORT: Joi.number().default(3306),
+        PROD_DB_USERNAME: Joi.string().when('ENV', {
+          is: 'prod',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        PROD_DB_PASSWORD: Joi.string().when('ENV', {
+          is: 'prod',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        PROD_DB_DATABASE: Joi.string().when('ENV', {
+          is: 'prod',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
         HASH_ROUNDS: Joi.number().required(),
         ACCESS_TOKEN_SECRET: Joi.string().required(),
         REFRESH_TOKEN_SECRET: Joi.string().required(),
@@ -42,16 +81,31 @@ import { ChatModule } from './chat/chat.module';
     }),
     // ConfigModule의 설정 값을 기반으로 TypeORM 모듈을 비동기로 설정
     TypeOrmModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        type: configService.get<string>(envVariables.dbType) as 'mysql',
-        host: configService.get<string>(envVariables.dbHost),
-        port: configService.get<number>(envVariables.dbPort),
-        username: configService.get<string>(envVariables.dbUsername),
-        password: configService.get<string>(envVariables.dbPassword),
-        database: configService.get<string>(envVariables.dbDatabase),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로
-        synchronize: true, // 개발 환경에서만 사용, 프로덕션에서는 false로 설정
-      }),
+      useFactory: (configService: ConfigService) => {
+        const env = configService.get<string>(envVariables.env);
+        const isProd = env === 'prod';
+
+        return {
+          type: configService.get<string>(envVariables.dbType) as 'mysql',
+          host: isProd
+            ? configService.get<string>(envVariables.prodDbHost)
+            : configService.get<string>(envVariables.dbHost),
+          port: isProd
+            ? configService.get<number>(envVariables.prodDbPort)
+            : configService.get<number>(envVariables.dbPort),
+          username: isProd
+            ? configService.get<string>(envVariables.prodDbUsername)
+            : configService.get<string>(envVariables.dbUsername),
+          password: isProd
+            ? configService.get<string>(envVariables.prodDbPassword)
+            : configService.get<string>(envVariables.dbPassword),
+          database: isProd
+            ? configService.get<string>(envVariables.prodDbDatabase)
+            : configService.get<string>(envVariables.dbDatabase),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로
+          synchronize: env === 'dev', // 개발 환경에서만 true, 프로덕션에서는 false
+        };
+      },
       inject: [ConfigService],
     }),
     BoardModule,
