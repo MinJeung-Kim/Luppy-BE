@@ -160,14 +160,10 @@ export class AuthService {
       type: isRefreshToken ? 'refresh' : 'access',
     };
 
-    return this.jwtService.signAsync(
-      payload,
-      {
-        secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-        // 만료 시간
-        expiresIn: isRefreshToken ? '24h' : '5m',
-      },
-    );
+    return this.jwtService.signAsync(payload, {
+      secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
+      expiresIn: isRefreshToken ? '24h' : '5m',
+    });
   }
 
   async login(rawToken: string) {
