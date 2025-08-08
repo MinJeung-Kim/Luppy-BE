@@ -154,13 +154,14 @@ export class AuthService {
       envVariables.accessTokenSecret,
     );
 
+    const payload: Record<string, any> = {
+      sub: id,
+      role,
+      type: isRefreshToken ? 'refresh' : 'access',
+    };
+
     return this.jwtService.signAsync(
-      {
-        // payload
-        sub: id,
-        role: role,
-        type: isRefreshToken ? 'refresh' : 'access',
-      },
+      payload,
       {
         secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
         // 만료 시간

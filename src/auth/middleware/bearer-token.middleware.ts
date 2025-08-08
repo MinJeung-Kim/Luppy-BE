@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { NextFunction, Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { envVariables } from 'src/common/const/env.const';
 import { RequestWithUser } from 'src/types/request';
 
@@ -15,7 +15,7 @@ export class BearerTokenMiddleware implements NestMiddleware {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async use(req: RequestWithUser, res: Response, next: NextFunction) {
     // Basic $token
