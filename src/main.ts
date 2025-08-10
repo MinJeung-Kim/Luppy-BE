@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { corsOptions } from './utils/cors-options';
 import { AppModule } from './app.module';
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors(corsOptions);
@@ -15,7 +16,8 @@ async function bootstrap() {
       },
     }),
   );
-  const port = await app.listen(Number(process.env.PORT) || 8080);
+  // const port = await app.listen(Number(process.env.PORT) || 8080);
+  const port = await app.listen(Number(process.env.PORT));
   await app.listen(port);
 }
 bootstrap();
