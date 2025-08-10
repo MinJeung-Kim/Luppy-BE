@@ -26,54 +26,15 @@ import { ChatModule } from './chat/chat.module';
     ConfigModule.forRoot({
       isGlobal: true, // 환경 변수를 전역으로 사용 가능하게 설정
       envFilePath: '.env', // 환경 변수 파일 경로
-      ignoreEnvFile: process.env.ENV === 'prod', // 프로덕션 환경에서는 .env 파일을 무시
+      ignoreEnvFile: process.env.NODE_ENV === 'prod', // 프로덕션 환경에서는 .env 파일을 무시
       validationSchema: Joi.object({
         ENV: Joi.string().valid('dev', 'prod').default('dev'),
         DB_TYPE: Joi.string().valid('mysql').required(),
-        // 개발 환경용 DB 설정
-        DB_HOST: Joi.string().when('ENV', {
-          is: 'dev',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
+        DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().default(3306),
-        DB_USERNAME: Joi.string().when('ENV', {
-          is: 'dev',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        DB_PASSWORD: Joi.string().when('ENV', {
-          is: 'dev',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        DB_DATABASE: Joi.string().when('ENV', {
-          is: 'dev',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        // 운영 환경용 DB 설정
-        MYSQLHOST: Joi.string().when('ENV', {
-          is: 'prod',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        MYSQLPORT: Joi.number().default(3306),
-        MYSQLUSER: Joi.string().when('ENV', {
-          is: 'prod',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        MYSQLPASSWORD: Joi.string().when('ENV', {
-          is: 'prod',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
-        MYSQLDATABASE: Joi.string().when('ENV', {
-          is: 'prod',
-          then: Joi.required(),
-          otherwise: Joi.optional(),
-        }),
+        DB_USERNAME: Joi.string().required(),
+        DB_PASSWORD: Joi.string().required(),
+        DB_DATABASE: Joi.string().required(),
         HASH_ROUNDS: Joi.number().required(),
         ACCESS_TOKEN_SECRET: Joi.string().required(),
         REFRESH_TOKEN_SECRET: Joi.string().required(),
@@ -81,33 +42,16 @@ import { ChatModule } from './chat/chat.module';
     }),
     // ConfigModule의 설정 값을 기반으로 TypeORM 모듈을 비동기로 설정
     TypeOrmModule.forRootAsync({
-      useFactory: (configService: ConfigService) => {
-        const env = configService.get<string>(envVariables.env);
-        const isProd = env === 'prod';
-
-        return {
-          type: configService.get<string>(envVariables.dbType) as 'mysql',
-          host: isProd
-            ? configService.get<string>(envVariables.prodDbHost)
-            : configService.get<string>(envVariables.dbHost),
-          port: isProd
-            ? configService.get<number>(envVariables.prodDbPort)
-            : configService.get<number>(envVariables.dbPort),
-          username: isProd
-            ? configService.get<string>(envVariables.prodDbUsername)
-            : configService.get<string>(envVariables.dbUsername),
-          password: isProd
-            ? configService.get<string>(envVariables.prodDbPassword)
-            : configService.get<string>(envVariables.dbPassword),
-          database: isProd
-            ? configService.get<string>(envVariables.prodDbDatabase)
-            : configService.get<string>(envVariables.dbDatabase),
-          entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로
-          synchronize: env === 'dev', // 개발 환경에서만 true, 프로덕션에서는 false
-          autoLoadEntities: true,
-          connectTimeout: 20000,
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        type: configService.get<string>(envVariables.dbType) as 'mysql',
+        host: configService.get<string>(envVariables.dbHost),
+        port: configService.get<number>(envVariables.dbPort),
+        username: configService.get<string>(envVariables.dbUsername),
+        password: configService.get<string>(envVariables.dbPassword),
+        database: configService.get<string>(envVariables.dbDatabase),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로
+        synchronize: true, // 개발 환경에서만 사용, 프로덕션에서는 false로 설정
+      }),
       inject: [ConfigService],
     }),
     BoardModule,
