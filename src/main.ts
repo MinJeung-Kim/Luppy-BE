@@ -16,8 +16,8 @@ async function bootstrap() {
       },
     }),
   );
-  // const port = await app.listen(Number(process.env.PORT) || 8080);
-  const port = await app.listen(Number(process.env.PORT));
-  await app.listen(port);
+  const port = Number(process.env.PORT) || 8080; // Railway면 PORT가 주입됨
+  await app.listen(port, '0.0.0.0');             // 한 번만 호출
+  console.log(`✓ Listening on http://0.0.0.0:${port}`);
 }
 bootstrap();
