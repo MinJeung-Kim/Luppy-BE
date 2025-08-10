@@ -104,6 +104,8 @@ import { ChatModule } from './chat/chat.module';
             : configService.get<string>(envVariables.dbDatabase),
           entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로
           synchronize: env === 'dev', // 개발 환경에서만 true, 프로덕션에서는 false
+          autoLoadEntities: true,
+          connectTimeout: 20000,
         };
       },
       inject: [ConfigService],
