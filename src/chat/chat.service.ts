@@ -45,19 +45,14 @@ export class ChatService {
 
   async createChatRoom(body: CreateChatDto, client: Socket, qr: QueryRunner) {
     const { host, guests } = body;
-    console.log('host, guest : ', host, guests); // 디버깅용 로그
 
-    // host와 guest를 User 엔티티로 변환
     const hostUser = await qr.manager.findOne(User, {
       where: { id: parseInt(host) }
     });
 
     const guestUsers = await Promise.all(
-      guests.map(guestId => {
-        console.log(`Fetching user with ID: ${guestId}`);
-
-        return qr.manager.findOne(User, { where: { id: guestId } });
-      })
+      guests.map(guestId => qr.manager.findOne(User, { where: { id: guestId } })
+      )
     );
 
     if (!hostUser) {
@@ -75,7 +70,6 @@ export class ChatService {
       users: [hostUser, ...validGuestUsers],
     });
 
-    // 필요한 사용자 정보만 선택해서 전송
     const hostInfo = {
       id: hostUser.id,
       email: hostUser.email,
@@ -96,7 +90,6 @@ export class ChatService {
 
     client.emit('roomCreated', { host: hostInfo, guests: guestInfos });
     console.log('Chat room created:', hostInfo, guestInfos); // 디버깅용 로그
-
 
     return chatRoom;
   }
@@ -212,10 +205,12 @@ export class ChatService {
         'chatRoom.createdAt',
         'host.id',
         'host.name',
+        'host.phone',
         'host.email',
         'host.profile',
         'users.id',
         'users.name',
+        'users.phone',
         'users.email',
         'users.profile'
       ])
