@@ -44,9 +44,8 @@ export class ChatService {
   }
 
   async createChatRoom(body: CreateChatDto, client: Socket, qr: QueryRunner) {
-    // const { host, guest } = body;
-    const { host, guest } = body;
-    console.log('host, guest : ', host, guest); // 디버깅용 로그
+    const { host, guests } = body;
+    console.log('host, guest : ', host, guests); // 디버깅용 로그
 
     // host와 guest를 User 엔티티로 변환
     const hostUser = await qr.manager.findOne(User, {
@@ -54,9 +53,11 @@ export class ChatService {
     });
 
     const guestUsers = await Promise.all(
-      guest.map(guestId =>
-        qr.manager.findOne(User, { where: { id: parseInt(guestId) } })
-      )
+      guests.map(guestId => {
+        console.log(`Fetching user with ID: ${guestId}`);
+
+        return qr.manager.findOne(User, { where: { id: guestId } });
+      })
     );
 
     if (!hostUser) {
@@ -64,7 +65,7 @@ export class ChatService {
     }
 
     const validGuestUsers = guestUsers.filter(user => user !== null);
-    if (validGuestUsers.length !== guest.length) {
+    if (validGuestUsers.length !== guests.length) {
       throw new WsException('일부 게스트 사용자를 찾을 수 없습니다.');
     }
 

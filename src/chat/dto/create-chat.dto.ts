@@ -12,6 +12,6 @@ export class CreateChatDto {
   host: string;
 
   @IsArray()
-  @IsString({ each: true })
-  guest: string[];
+  @IsNumber({}, { each: true })
+  guests: number[];
 }
