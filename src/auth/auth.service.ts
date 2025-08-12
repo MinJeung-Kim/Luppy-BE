@@ -187,6 +187,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         phone: user.phone,
+        profile: user.profile,
       }
     };
   }
