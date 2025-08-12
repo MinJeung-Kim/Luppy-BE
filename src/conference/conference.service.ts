@@ -8,11 +8,22 @@ import { User } from 'src/user/entity/user.entity';
 
 @Injectable()
 export class ConferenceService {
+  private readonly connectedClients = new Map<number, Socket>();
 
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) { }
+
+
+  registerClient(userId: number, client: Socket) {
+    this.connectedClients.set(userId, client);
+  }
+
+  removeClient(userId: number) {
+    this.connectedClients.delete(userId);
+  }
+
 
   async findHostAndGuests(body: ConferenceDto, qr: QueryRunner) {
     const { host, guests } = body;
@@ -41,7 +52,21 @@ export class ConferenceService {
       throw new WsException('일부 게스트 사용자를 찾을 수 없습니다.');
     }
 
-    client.join(body.roomId)
+    // const client = this.connectedClients.get(user.id); client
+    //       ?.to(`chatRoom/${chatRoom.id.toString()}`)
+    //       .emit('sendMessage', plainToClass(Chat, msgModal));
 
+    client.join(body.roomId)
+    client.emit('createConferenceRoom', { message: "회의실이 생성되었습니다." });
+
+    // 게스트들에게 초대 알림 보내기
+    validGuestUsers.forEach(guest => {
+      const guestClient = this.connectedClients.get(guest.id);
+      if (guestClient) {
+        guestClient.emit('conferenceInvitation', {
+          hostName: hostUser.name
+        });
+      }
+    });
   }
 }
