@@ -65,4 +65,15 @@ export class ConferenceGateway {
   ) {
     await this.conferenceService.createConferenceRoom(body, client, qr);
   }
+
+  @SubscribeMessage('joinConferenceRoom')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleJoinConferenceRoom(
+    @MessageBody() body: ConferenceDto,
+    @ConnectedSocket() client: Socket,
+    @WsQueryRunner() qr: QueryRunner,
+  ) {
+    await this.conferenceService.joinConferenceRoom(body, client, qr);
+  }
+
 }

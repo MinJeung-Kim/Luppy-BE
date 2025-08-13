@@ -52,10 +52,6 @@ export class ConferenceService {
       throw new WsException('일부 게스트 사용자를 찾을 수 없습니다.');
     }
 
-    // const client = this.connectedClients.get(user.id); client
-    //       ?.to(`chatRoom/${chatRoom.id.toString()}`)
-    //       .emit('sendMessage', plainToClass(Chat, msgModal));
-
     client.join(body.roomId)
     client.emit('createConferenceRoom', { message: "회의실이 생성되었습니다." });
 
@@ -64,9 +60,44 @@ export class ConferenceService {
       const guestClient = this.connectedClients.get(guest.id);
       if (guestClient) {
         guestClient.emit('conferenceInvitation', {
+          roomId: body.roomId,
           hostName: hostUser.name
         });
       }
+    });
+  }
+
+  async joinConferenceRoom(body: ConferenceDto, client: Socket, qr: QueryRunner) {
+    const { host } = body;
+
+    const hostUser = await qr.manager.findOne(User, {
+      where: { id: parseInt(host) }
+    });
+
+    if (!hostUser) {
+      throw new WsException('호스트 사용자를 찾을 수 없습니다.');
+    }
+    const joinUser = {
+      id: hostUser.id,
+      name: hostUser.name,
+      email: hostUser.email,
+      phone: hostUser.phone,
+      profile: hostUser.profile
+    }
+
+    // 클라이언트를 방에 참가시킴
+    client.join(body.roomId);
+
+    // 참가 성공 알림을 해당 클라이언트에게 전송
+    client.emit('joinConferenceRoom', {
+      message: "회의실에 참가했습니다.",
+      roomId: body.roomId
+    });
+
+    // 방에 있는 다른 참가자들에게 새로운 참가자 알림
+    client.to(body.roomId).emit('userJoined', {
+      message: "새로운 참가자가 회의실에 입장했습니다.",
+      joinUser
     });
   }
 }
