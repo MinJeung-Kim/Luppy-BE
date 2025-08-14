@@ -100,4 +100,17 @@ export class ConferenceService {
       joinUser
     });
   }
+
+
+  offer({ roomId, offer }: { roomId: string, offer: RTCSessionDescriptionInit }, client: Socket) {
+    client.to(roomId).emit('offer', { offer });
+  }
+
+  answer({ roomId, answer }: { roomId: string, answer: RTCSessionDescriptionInit }, client: Socket) {
+    client.to(roomId).emit('answer', { answer });
+  }
+
+  iceCandidate({ roomId, candidate }: { roomId: string, candidate: RTCIceCandidateInit }, client: Socket) {
+    client.to(roomId).emit('iceCandidate', { candidate });
+  }
 }

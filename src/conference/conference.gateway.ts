@@ -76,4 +76,30 @@ export class ConferenceGateway {
     await this.conferenceService.joinConferenceRoom(body, client, qr);
   }
 
+  @SubscribeMessage('sendOffer')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleOffer(
+    @MessageBody() { roomId, offer }: { roomId: string, offer: RTCSessionDescriptionInit },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.conferenceService.offer({ roomId, offer }, client);
+  }
+
+  @SubscribeMessage('sendAnswer')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleAnswer(
+    @MessageBody() { roomId, answer }: { roomId: string, answer: RTCSessionDescriptionInit },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.conferenceService.answer({ roomId, answer }, client);
+  }
+
+  @SubscribeMessage('sendIceCandidate')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleIceCandidate(
+    @MessageBody() { roomId, candidate }: { roomId: string, candidate: RTCIceCandidateInit },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.conferenceService.iceCandidate({ roomId, candidate }, client);
+  }
 }
