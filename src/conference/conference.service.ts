@@ -110,7 +110,7 @@ export class ConferenceService {
     client.to(roomId).emit('answer', { answer });
   }
 
-  iceCandidate({ roomId, candidate }: { roomId: string, candidate: RTCIceCandidateInit }, client: Socket) {
-    client.to(roomId).emit('iceCandidate', { candidate });
+  icecandidate({ roomId, candidate }: { roomId: string, candidate: RTCIceCandidateInit }, client: Socket) {
+    client.to(roomId).emit('icecandidate', { candidate });
   }
 }

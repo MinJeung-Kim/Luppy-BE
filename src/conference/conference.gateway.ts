@@ -96,10 +96,10 @@ export class ConferenceGateway {
 
   @SubscribeMessage('sendIceCandidate')
   @UseInterceptors(WsTransactionInterceptor)
-  async handleIceCandidate(
+  async handleIcecandidate(
     @MessageBody() { roomId, candidate }: { roomId: string, candidate: RTCIceCandidateInit },
     @ConnectedSocket() client: Socket,
   ) {
-    this.conferenceService.iceCandidate({ roomId, candidate }, client);
+    this.conferenceService.icecandidate({ roomId, candidate }, client);
   }
 }
