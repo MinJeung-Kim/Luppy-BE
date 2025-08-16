@@ -113,4 +113,8 @@ export class ConferenceService {
   icecandidate({ roomId, candidate }: { roomId: string, candidate: RTCIceCandidateInit }, client: Socket) {
     client.to(roomId).emit('icecandidate', { candidate });
   }
+
+  mediaState({ roomId, cameraOn, micOn }: { roomId: string, cameraOn: boolean, micOn: boolean }, client: Socket) {
+    client.to(roomId).emit('mediaState', { cameraOn, micOn });
+  }
 }

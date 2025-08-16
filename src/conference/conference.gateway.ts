@@ -102,4 +102,13 @@ export class ConferenceGateway {
   ) {
     this.conferenceService.icecandidate({ roomId, candidate }, client);
   }
+
+  @SubscribeMessage('sendMediaState')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleMediaState(
+    @MessageBody() { roomId, cameraOn, micOn }: { roomId: string, cameraOn: boolean, micOn: boolean },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.conferenceService.mediaState({ roomId, cameraOn, micOn }, client);
+  }
 }
