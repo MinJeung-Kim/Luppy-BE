@@ -9,6 +9,14 @@ import { QueryRunner } from 'typeorm';
 import { corsOptions } from 'src/utils/cors-options';
 import { AuthService } from 'src/auth/auth.service';
 
+export type TJoinUser = {
+  id: number;
+  name: string;
+  profile: string;
+  isMicOn: boolean;
+  isVideoOn: boolean;
+}
+
 @WebSocketGateway({
   cors: corsOptions,
   transports: ['websocket'],      // 폴링 비활성화 
@@ -106,9 +114,9 @@ export class ConferenceGateway {
   @SubscribeMessage('sendMediaState')
   @UseInterceptors(WsTransactionInterceptor)
   async handleMediaState(
-    @MessageBody() { roomId, cameraOn, micOn }: { roomId: string, cameraOn: boolean, micOn: boolean },
+    @MessageBody() { roomId, user }: { roomId: string, user: TJoinUser },
     @ConnectedSocket() client: Socket,
   ) {
-    this.conferenceService.mediaState({ roomId, cameraOn, micOn }, client);
+    this.conferenceService.mediaState({ roomId, user }, client);
   }
 }

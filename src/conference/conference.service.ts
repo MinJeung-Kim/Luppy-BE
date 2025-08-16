@@ -5,6 +5,7 @@ import { QueryRunner, Repository } from 'typeorm';
 import { WsException } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entity/user.entity';
+import { TJoinUser } from './conference.gateway';
 
 @Injectable()
 export class ConferenceService {
@@ -58,10 +59,17 @@ export class ConferenceService {
     // 게스트들에게 초대 알림 보내기
     validGuestUsers.forEach(guest => {
       const guestClient = this.connectedClients.get(guest.id);
+      const guestInfo = {
+        id: guest.id,
+        name: guest.name,
+        profile: guest.profile,
+        isMicOn: true,
+        isVideoOn: true
+      }
       if (guestClient) {
         guestClient.emit('conferenceInvitation', {
-          roomId: body.roomId,
-          hostName: hostUser.name
+          host: guestInfo, roomId: body.roomId
+
         });
       }
     });
@@ -114,7 +122,7 @@ export class ConferenceService {
     client.to(roomId).emit('icecandidate', { candidate });
   }
 
-  mediaState({ roomId, cameraOn, micOn }: { roomId: string, cameraOn: boolean, micOn: boolean }, client: Socket) {
-    client.to(roomId).emit('mediaState', { cameraOn, micOn });
+  mediaState({ roomId, user }: { roomId: string, user: TJoinUser }, client: Socket) {
+    client.to(roomId).emit('mediaState', user);
   }
 }
