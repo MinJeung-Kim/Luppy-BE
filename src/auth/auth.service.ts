@@ -162,7 +162,8 @@ export class AuthService {
     // 
     return this.jwtService.signAsync(payload, {
       secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
-      expiresIn: isRefreshToken ? '24h' : '5m',
+      // expiresIn: isRefreshToken ? '24h' : '5m',
+      expiresIn: isRefreshToken ? '24h' : '24h', // 배포 전에 시간 바꾸기
     });
   }
 
@@ -186,6 +187,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         phone: user.phone,
+        profile: user.profile,
       }
     };
   }

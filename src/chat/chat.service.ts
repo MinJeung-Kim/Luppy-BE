@@ -7,7 +7,7 @@ import { Socket } from 'socket.io';
 import { Chat } from './entity/chat.entity';
 import { ChatRoom } from './entity/chat-room.entity';
 import { CreateChatDto } from './dto/create-chat.dto';
-import { Role, User } from 'src/user/entity/user.entity';
+import { User } from 'src/user/entity/user.entity';
 
 @Injectable()
 export class ChatService {
@@ -43,7 +43,7 @@ export class ChatService {
     });
   }
 
-  async createChatRoom(body: CreateChatDto, client: Socket, qr: QueryRunner) {
+  async findHostAndGuests(body: CreateChatDto, qr: QueryRunner) {
     const { host, guests } = body;
 
     const hostUser = await qr.manager.findOne(User, {
@@ -55,12 +55,18 @@ export class ChatService {
       )
     );
 
+    return { hostUser, guestUsers };
+  }
+
+  async createChatRoom(body: CreateChatDto, client: Socket, qr: QueryRunner) {
+    const { hostUser, guestUsers } = await this.findHostAndGuests(body, qr);
+
     if (!hostUser) {
       throw new WsException('호스트 사용자를 찾을 수 없습니다.');
     }
 
     const validGuestUsers = guestUsers.filter(user => user !== null);
-    if (validGuestUsers.length !== guests.length) {
+    if (validGuestUsers.length !== body.guests.length) {
       throw new WsException('일부 게스트 사용자를 찾을 수 없습니다.');
     }
 
@@ -89,17 +95,17 @@ export class ChatService {
     }));
 
     client.emit('roomCreated', { host: hostInfo, guests: guestInfos });
-    console.log('Chat room created:', hostInfo, guestInfos); // 디버깅용 로그
 
     return chatRoom;
   }
 
   async createMessage(
-    payload: { sub: number },
     body: CreateChatDto,
+    client: Socket,
     qr: QueryRunner,
   ) {
     const { roomId, message } = body;
+    const payload = client.data.user;
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
     });
@@ -114,7 +120,6 @@ export class ChatService {
       relations: ['users'],
     });
 
-    // const chatRoom = await this.getOrCreateChatRoom(user, qr, roomId);
 
     if (!chatRoom) {
       throw new WsException('채팅방을 찾을 수 없습니다.');
@@ -130,10 +135,10 @@ export class ChatService {
       },
     });
 
-    const client = this.connectedClients.get(user.id);
-    client
-      ?.to(`chatRoom/${chatRoom.id.toString()}`)
-      .emit('sendMessage', plainToClass(Chat, msgModal));
+    // const client = this.connectedClients.get(user.id);
+    // client
+    //   ?.to(`chatRoom/${chatRoom.id.toString()}`)
+    //   .emit('sendMessage', plainToClass(Chat, msgModal));
     client?.emit('sendMessage', plainToClass(Chat, msgModal)); // 본인에게도 전송
 
     console.log(`Message sent in room ${chatRoom.id}:`, msgModal); // 디버깅용 로그
@@ -142,56 +147,12 @@ export class ChatService {
     return message;
   }
 
-  async getOrCreateChatRoom(user: User, qr: QueryRunner, room?: number) {
-    if (user.role === Role.admin) {
-      if (!room) {
-        throw new WsException('어드민은 room 값을 필수로 제공해야합니다.');
-      }
-
-      return qr.manager.findOne(ChatRoom, {
-        where: { id: room },
-        relations: ['users'],
-      });
-    }
-
-    let chatRoom = await qr.manager
-      .createQueryBuilder(ChatRoom, 'chatRoom')
-      .innerJoin('chatRoom.users', 'user')
-      .where('user.id = :userId', { userId: user.id })
-      .getOne();
-
-    if (!chatRoom) {
-      const adminUser = await qr.manager.findOne(User, {
-        where: { role: Role.admin },
-      });
-
-      if (!adminUser) {
-        throw new WsException('어드민 유저가 존재하지 않습니다.');
-      }
-
-      chatRoom = await this.chatRoomRepository.save({
-        users: [user, adminUser],
-      });
-
-      [user.id, adminUser.id].forEach((userId) => {
-        const client = this.connectedClients.get(userId);
-        if (client) {
-          client.emit('roomCreated', chatRoom?.id);
-          client.join(`chatRoom/${chatRoom?.id}`);
-        }
-      });
-    }
-
-    return chatRoom;
-  }
 
   /**
-   * API to get the list of chat rooms
+   * ========== API to get the list of chat rooms ==========
    */
 
   getChatList(userId: number) {
-    // roomId, host, guests, createdAt
-
     // userId가 호스트이거나 게스트로 속해있는 채팅방만 필터링하여 반환
     // 'users' 관계를 통해 해당 사용자가 포함된 방을 찾습니다.
 
@@ -228,4 +189,5 @@ export class ChatService {
       .orderBy('chat.createdAt', 'ASC')
       .getMany();
   }
+
 }

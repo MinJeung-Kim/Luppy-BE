@@ -18,9 +18,9 @@ import { corsOptions } from 'src/utils/cors-options';
 
 @WebSocketGateway({
   cors: corsOptions,
-  transports: ['websocket'],      // 폴링 비활성화하고 싶다면
-  pingInterval: 25000,            // 기본값 유지/미세 조정
-  pingTimeout: 20000,             // 기본값 유지/미세 조정
+  transports: ['websocket'],      // 폴링 비활성화 
+  pingInterval: 25000,
+  pingTimeout: 20000,
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
@@ -81,7 +81,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @WsQueryRunner() qr: QueryRunner,
   ) {
-    const payload = client.data.user;
-    await this.chatService.createMessage(payload, body, qr);
+    await this.chatService.createMessage(body, client, qr);
   }
+
 }
