@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { Board } from 'src/board/entity/board.entity';
+import { ChatGroup } from 'src/chat/entity/chat-group.entity';
 import { ChatRoom } from 'src/chat/entity/chat-room.entity';
 import { Chat } from 'src/chat/entity/chat.entity';
 import { BaseTable } from 'src/common/entity/base-table.entity';
@@ -67,4 +68,10 @@ export class User extends BaseTable {
     (chatRoom) => chatRoom.host,
   )
   hostedChatRooms: ChatRoom[];
+
+  @OneToMany(
+    () => ChatGroup, //
+    (chatGroup) => chatGroup.creator,
+  )
+  chatGroups: ChatGroup[];
 }

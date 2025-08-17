@@ -8,6 +8,8 @@ import { Chat } from './entity/chat.entity';
 import { ChatRoom } from './entity/chat-room.entity';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { User } from 'src/user/entity/user.entity';
+import { CreateGroupDto } from './dto/create-chat-group';
+import { ChatGroup } from './entity/chat-group.entity';
 
 @Injectable()
 export class ChatService {
@@ -20,6 +22,8 @@ export class ChatService {
     private readonly chatRepository: Repository<Chat>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(ChatGroup)
+    private readonly chatGroupRepository: Repository<ChatGroup>,
   ) { }
 
   registerClient(userId: number, client: Socket) {
@@ -190,4 +194,21 @@ export class ChatService {
       .getMany();
   }
 
+  createGroupChat(createGroupDto: CreateGroupDto, qr: QueryRunner) {
+    const chatGroup = qr.manager.create(ChatGroup, createGroupDto);
+    return qr.manager.save(chatGroup);
+  }
+
+  async getGroupChat(userId: number) {
+    return this.chatGroupRepository.find({
+      where: { creator: { id: userId } },
+      relations: {
+        chatRooms: {
+          users: true,
+          host: true,
+        },
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

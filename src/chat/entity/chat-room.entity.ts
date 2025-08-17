@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Chat } from './chat.entity';
+import { ChatGroup } from './chat-group.entity';
 
 @Entity()
 export class ChatRoom extends BaseTable {
@@ -34,4 +35,7 @@ export class ChatRoom extends BaseTable {
     (chat) => chat.chatRoom,
   )
   chats: Chat[];
+
+  @ManyToOne(() => ChatGroup, (group) => group.chatRooms)
+  chatGroup: ChatGroup;
 }
