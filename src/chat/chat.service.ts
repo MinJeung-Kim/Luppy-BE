@@ -194,8 +194,12 @@ export class ChatService {
       .getMany();
   }
 
-  createGroupChat(createGroupDto: CreateGroupDto, qr: QueryRunner) {
-    const chatGroup = qr.manager.create(ChatGroup, createGroupDto);
+  createGroupChat(createGroupDto: CreateGroupDto, userId: number, qr: QueryRunner) {
+    // creator 관계에 현재 사용자 연결 (추가 조회 없이 FK만 설정)
+    const chatGroup = qr.manager.create(ChatGroup, {
+      ...createGroupDto,
+      creator: { id: userId } as User,
+    });
     return qr.manager.save(chatGroup);
   }
 

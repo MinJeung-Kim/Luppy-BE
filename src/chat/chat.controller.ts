@@ -27,8 +27,11 @@ export class ChatController {
 
     @Post('group')
     @UseInterceptors(TransactionInterceptor)
-    createGroupChat(@Body() body: CreateGroupDto, @Request() res) {
-        return this.chatService.createGroupChat(body, res.queryRunner);
+    createGroupChat(@Body() body: CreateGroupDto, @Request() req: RequestWithUser & { queryRunner: any }) {
+        if (!req.user?.sub) {
+            throw new UnauthorizedException('인증이 필요합니다.');
+        }
+        return this.chatService.createGroupChat(body, req.user.sub, req.queryRunner);
     }
 
 
