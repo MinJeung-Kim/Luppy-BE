@@ -156,11 +156,12 @@ export class ChatService {
    * ========== API to get the list of chat rooms ==========
    */
 
-  getChatList(userId: number) {
+  async getChatList(userId: number, groupId: string) {
     // userId가 호스트이거나 게스트로 속해있는 채팅방만 필터링하여 반환
     // 'users' 관계를 통해 해당 사용자가 포함된 방을 찾습니다.
 
-    return this.chatRoomRepository
+    // groupId가 'all-inbox'면 모든 값을 리턴, 아니면 groupId가 null이 아닌 값 중에서 일치하는 것만 리턴
+    const queryBuilder = this.chatRoomRepository
       .createQueryBuilder('chatRoom')
       .leftJoinAndSelect('chatRoom.host', 'host')
       .leftJoinAndSelect('chatRoom.users', 'users')
@@ -179,8 +180,19 @@ export class ChatService {
         'users.email',
         'users.profile'
       ])
-      .orderBy('chatRoom.createdAt', 'DESC')
-      .getManyAndCount();
+      .orderBy('chatRoom.createdAt', 'DESC');
+
+    if (groupId === 'all-inbox') {
+      // 모든 값 리턴
+      return await queryBuilder.getManyAndCount();
+    } else {
+      // groupId가 null이 아닌 값 중에서 일치하는 것만 리턴
+      return await queryBuilder
+        .andWhere('chatRoom.chatGroupId IS NOT NULL')
+        .andWhere('chatRoom.chatGroupId = :groupId', { groupId })
+        .getManyAndCount();
+    }
+
   }
 
   getChatRoom(chatRoomId: string) {
@@ -214,5 +226,9 @@ export class ChatService {
       },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  MoveGroupChat(id: number, groupId: number, qr: QueryRunner) {
+    return qr.manager.update(ChatRoom, id, { chatGroup: { id: groupId } });
   }
 }
