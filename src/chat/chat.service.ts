@@ -228,7 +228,13 @@ export class ChatService {
     });
   }
 
-  MoveGroupChat(id: number, groupId: number, qr: QueryRunner) {
-    return qr.manager.update(ChatRoom, id, { chatGroup: { id: groupId } });
+  async MoveGroupChat(id: number, groupId: number, qr: QueryRunner) {
+    const chatRoom = await qr.manager.findOne(ChatRoom, { where: { id } });
+    if (!chatRoom) {
+      throw new WsException('채팅방을 찾을 수 없습니다.');
+    }
+    chatRoom.chatGroup = { id: groupId } as ChatGroup;
+    await qr.manager.save(chatRoom);
+    return chatRoom;
   }
 }
