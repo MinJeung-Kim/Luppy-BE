@@ -37,22 +37,22 @@ export class ChatController {
 
     @Get('group')
     @UseInterceptors(TransactionInterceptor)
-    GetGroupChat(@Request() req: RequestWithUser) {
+    getGroupList(@Request() req: RequestWithUser) {
         if (!req.user?.sub) {
             throw new UnauthorizedException('인증이 필요합니다.');
         }
 
         const userId = req.user.sub;
-        return this.chatService.getGroupChat(userId);
+        return this.chatService.getGroupList(userId);
     }
 
 
     @Patch('group/:id')
     @UseInterceptors(TransactionInterceptor)
-    MoveGroupChat(@Param('id', ParseIntPipe) id: number,
+    moveChatToGroup(@Param('id', ParseIntPipe) id: number,
         @Body() groupId: number,
         @Request() res,) {
 
-        return this.chatService.MoveGroupChat(id, groupId, res.queryRunner);
+        return this.chatService.moveChatToGroup(id, groupId, res.queryRunner);
     }
 }

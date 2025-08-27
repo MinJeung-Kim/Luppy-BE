@@ -215,8 +215,8 @@ export class ChatService {
     return qr.manager.save(chatGroup);
   }
 
-  async getGroupChat(userId: number) {
-    return this.chatGroupRepository.find({
+  async getGroupList(userId: number) {
+    const groupList = this.chatGroupRepository.find({
       where: { creator: { id: userId } },
       relations: {
         chatRooms: {
@@ -226,9 +226,11 @@ export class ChatService {
       },
       order: { createdAt: 'DESC' },
     });
+
+    return groupList;
   }
 
-  async MoveGroupChat(id: number, groupId: number, qr: QueryRunner) {
+  async moveChatToGroup(id: number, groupId: number, qr: QueryRunner) {
     const chatRoom = await qr.manager.findOne(ChatRoom, { where: { id } });
     if (!chatRoom) {
       throw new WsException('채팅방을 찾을 수 없습니다.');
