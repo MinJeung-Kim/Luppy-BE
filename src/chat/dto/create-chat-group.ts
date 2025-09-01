@@ -1,6 +1,9 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateGroupDto {
+    @IsNumber()
+    groupId: number;
+
     @IsString()
     emoji: string;
 

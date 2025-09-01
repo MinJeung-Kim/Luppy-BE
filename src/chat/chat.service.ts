@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
@@ -10,6 +10,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { User } from 'src/user/entity/user.entity';
 import { CreateGroupDto } from './dto/create-chat-group';
 import { ChatGroup } from './entity/chat-group.entity';
+import { UpdateGroupDto } from './dto/update-chat-group';
 
 @Injectable()
 export class ChatService {
@@ -230,13 +231,35 @@ export class ChatService {
     return groupList;
   }
 
-  async moveChatToGroup(id: number, groupId: number, qr: QueryRunner) {
-    const chatRoom = await qr.manager.findOne(ChatRoom, { where: { id } });
+  async moveChatToGroup(id: number, updateGroupDto: UpdateGroupDto, qr: QueryRunner) {
+    const chatRoom = await qr.manager.findOne(ChatRoom, {
+      where: { id },
+      relations: {
+        chatGroup: true,
+        users: true,
+      },
+    });
+
+
     if (!chatRoom) {
-      throw new WsException('채팅방을 찾을 수 없습니다.');
+      throw new NotFoundException('채팅방을 찾을 수 없습니다.');
     }
-    chatRoom.chatGroup = { id: groupId } as ChatGroup;
+
+    const { groupId } = updateGroupDto;
+
+    console.log(groupId);
+
+    if (groupId) {
+      const chatGroup = await qr.manager.findOne(ChatGroup, { where: { id: groupId } });
+      if (!chatGroup) {
+        throw new NotFoundException('채팅 그룹을 찾을 수 없습니다.');
+      }
+
+      chatRoom.chatGroup = chatGroup;
+    }
+
     await qr.manager.save(chatRoom);
-    return chatRoom;
+
+    return this.chatRoomRepository.findOne({ where: { id } });
   }
 }

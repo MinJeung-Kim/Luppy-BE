@@ -3,6 +3,7 @@ import { User } from 'src/user/entity/user.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
@@ -37,5 +38,6 @@ export class ChatRoom extends BaseTable {
   chats: Chat[];
 
   @ManyToOne(() => ChatGroup, (group) => group.chatRooms)
+  @JoinColumn()
   chatGroup: ChatGroup;
 }

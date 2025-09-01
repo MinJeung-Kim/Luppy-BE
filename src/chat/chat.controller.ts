@@ -3,6 +3,7 @@ import { ChatService } from './chat.service';
 import { RequestWithUser } from 'src/types/request';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
 import { CreateGroupDto } from './dto/create-chat-group';
+import { UpdateGroupDto } from './dto/update-chat-group';
 
 @Controller('chat')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -50,9 +51,9 @@ export class ChatController {
     @Patch('group/:id')
     @UseInterceptors(TransactionInterceptor)
     moveChatToGroup(@Param('id', ParseIntPipe) id: number,
-        @Body() groupId: number,
+        @Body() updateGroupDto: UpdateGroupDto,
         @Request() res,) {
 
-        return this.chatService.moveChatToGroup(id, groupId, res.queryRunner);
+        return this.chatService.moveChatToGroup(id, updateGroupDto, res.queryRunner);
     }
 }
