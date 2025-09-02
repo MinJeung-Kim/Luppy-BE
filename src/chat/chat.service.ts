@@ -188,7 +188,7 @@ export class ChatService {
       .orderBy('chatRoom.createdAt', 'DESC');
 
     if (groupId === 'all-inbox') {
-      // 모든 값 리턴
+      // 모든 값 리턴 
       return await queryBuilder.getManyAndCount();
     } else {
       // groupId가 null이 아닌 값 중에서 일치하는 것만 리턴
