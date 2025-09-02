@@ -166,10 +166,14 @@ export class ChatService {
       .createQueryBuilder('chatRoom')
       .leftJoinAndSelect('chatRoom.host', 'host')
       .leftJoinAndSelect('chatRoom.users', 'users')
+      .leftJoinAndSelect('chatRoom.chatGroup', 'chatGroup')
       .innerJoin('chatRoom.users', 'filterUser', 'filterUser.id = :userId', { userId })
       .select([
         'chatRoom.id',
+        'chatRoom.chatGroup',
         'chatRoom.createdAt',
+        'chatGroup.id',
+        'chatGroup.name',
         'host.id',
         'host.name',
         'host.phone',
@@ -246,8 +250,6 @@ export class ChatService {
     }
 
     const { groupId } = updateGroupDto;
-
-    console.log(groupId);
 
     if (groupId) {
       const chatGroup = await qr.manager.findOne(ChatGroup, { where: { id: groupId } });
