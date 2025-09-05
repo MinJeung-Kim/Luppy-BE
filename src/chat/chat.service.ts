@@ -148,8 +148,8 @@ export class ChatService {
 
     console.log(`Message sent in room ${chatRoom.id}:`, msgModal); // 디버깅용 로그
 
-
-    return message;
+    // 저장된 메시지 전체를 반환하여 클라이언트/호출자에게 id, createdAt 등 메타 정보를 제공
+    return plainToClass(Chat, msgModal);
   }
 
 
@@ -158,10 +158,7 @@ export class ChatService {
    */
 
   async getChatList(userId: number, groupId: string) {
-    // userId가 호스트이거나 게스트로 속해있는 채팅방만 필터링하여 반환
-    // 'users' 관계를 통해 해당 사용자가 포함된 방을 찾습니다.
-
-    // groupId가 'all-inbox'면 모든 값을 리턴, 아니면 groupId가 null이 아닌 값 중에서 일치하는 것만 리턴
+    // todo : 채팅방 마지막 메시지 포함 👈
     const queryBuilder = this.chatRoomRepository
       .createQueryBuilder('chatRoom')
       .leftJoinAndSelect('chatRoom.host', 'host')
@@ -185,11 +182,24 @@ export class ChatService {
         'users.email',
         'users.profile'
       ])
+      .addSelect(subQuery => {
+        return subQuery
+          .select('c.message')
+          .from(Chat, 'c')
+          .where('c.chatRoomId = chatRoom.id')
+          .orderBy('c.createdAt', 'DESC')
+          .limit(1);
+      }, 'lastMessage')
       .orderBy('chatRoom.createdAt', 'DESC');
 
     if (groupId === 'all-inbox') {
       // 모든 값 리턴 
-      return await queryBuilder.getManyAndCount();
+      const { entities, raw } = await queryBuilder.getRawAndEntities();
+      const result = entities.map((room, idx) => ({
+        ...room,
+        lastMessage: raw[idx].lastMessage,
+      }));
+      return [result, entities.length];
     } else {
       // groupId가 null이 아닌 값 중에서 일치하는 것만 리턴
       return await queryBuilder
