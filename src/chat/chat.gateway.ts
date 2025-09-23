@@ -1,20 +1,12 @@
-import {
-  ConnectedSocket,
-  MessageBody,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  SubscribeMessage,
-  WebSocketGateway,
-} from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { QueryRunner } from 'typeorm';
-import { ChatService } from './chat.service';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
+import { corsOptions } from 'src/utils/cors-options';
+import { ChatService } from './chat.service';
 import { UseInterceptors } from '@nestjs/common';
 import { WsTransactionInterceptor } from 'src/common/interceptor/ws-transaction.interceptor';
 import { WsQueryRunner } from 'src/common/decorator/ws-query-runner.decorator';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { corsOptions } from 'src/utils/cors-options';
+import { QueryRunner } from 'typeorm';
 
 @WebSocketGateway({
   cors: corsOptions,
@@ -22,7 +14,8 @@ import { corsOptions } from 'src/utils/cors-options';
   pingInterval: 25000,
   pingTimeout: 20000,
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway {
+
   constructor(
     private readonly chatService: ChatService,
     private readonly authService: AuthService,
@@ -33,7 +26,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 클라이언트가 연결을 끊었을 때 실행되는 로직
     const user = client.data.user;
     if (user) {
-      this.chatService.removeClient(user.sub);
+      // remove only this socket
+      this.chatService.removeSocket(client.id);
     }
   }
 
@@ -52,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (payload) {
         client.data.user = payload;
         this.chatService.registerClient(payload.sub, client);
-        await this.chatService.joinUserRooms(payload, client);
+
       } else {
         client.disconnect();
         return;
@@ -64,24 +58,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('createChatRoom')
+  @SubscribeMessage('joinChatRoom')
   @UseInterceptors(WsTransactionInterceptor)
-  async handleCreateChatRoom(
-    @MessageBody() body: CreateChatDto,
+  async handleJoinChatRoom(
+    @MessageBody() roomId: number,
     @ConnectedSocket() client: Socket,
     @WsQueryRunner() qr: QueryRunner,
   ) {
-    await this.chatService.createChatRoom(body, client, qr);
+    await this.chatService.joinChatRoom(roomId, client, qr);
   }
+
 
   @SubscribeMessage('sendMessage')
   @UseInterceptors(WsTransactionInterceptor)
-  async handleMessage(
-    @MessageBody() body: CreateChatDto,
+  async handleSendMessage(
+    @MessageBody() body: { roomId: number, msg: string },
     @ConnectedSocket() client: Socket,
     @WsQueryRunner() qr: QueryRunner,
   ) {
-    await this.chatService.createMessage(body, client, qr);
+    await this.chatService.sendMessage(body, client, qr);
   }
 
 }

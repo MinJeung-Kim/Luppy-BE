@@ -19,8 +19,9 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseTimeInterceptor } from './common/interceptor/response-time.interceptor';
 import { ForbiddenExceptionFilter } from './common/filter/forbidden.filter';
 import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter';
-import { ChatModule } from './chat/chat.module';
 import { ConferenceModule } from './conference/conference.module';
+import { ChatModule } from './chat/chat.module';
+import { ChatGroupModule } from './chat-group/chat-group.module';
 
 @Module({
   imports: [
@@ -59,8 +60,9 @@ import { ConferenceModule } from './conference/conference.module';
     UserModule,
     TagModule,
     AuthModule,
-    ChatModule,
     ConferenceModule,
+    ChatModule,
+    ChatGroupModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

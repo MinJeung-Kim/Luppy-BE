@@ -17,9 +17,8 @@ export class BoardService {
     private readonly boardRepository: Repository<Board>,
     @InjectRepository(BoardDetail)
     private readonly boardDetailRepository: Repository<BoardDetail>,
-    private readonly dataSource: DataSource,
     private readonly commonService: CommonService,
-  ) {}
+  ) { }
 
   async findAll(dto: GetBoardsDto) {
     // const { title, page, take } = dto;

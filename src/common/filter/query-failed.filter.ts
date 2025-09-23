@@ -8,9 +8,7 @@ export class QueryFailedExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
 
-    const status = 400; // Bad Request
-
-    console.log(exception.message);
+    const status = 400; // Bad Request 
 
     let message = '데이터베이스 에러 발생 !!';
 

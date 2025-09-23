@@ -1,22 +1,30 @@
 import { BaseTable } from 'src/common/entity/base-table.entity';
-import { User } from 'src/user/entity/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ChatRoom } from './chat-room.entity';
 
 @Entity()
 export class Chat extends BaseTable {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @ManyToOne(() => User, (user) => user.chats)
-  author: User;
+    @Column()
+    msg: string;
 
-  @Column()
-  message: string;
+    @Column()
+    sender: number;
 
-  @ManyToOne(
-    () => ChatRoom, //
-    (chatRoom) => chatRoom.chats,
-  )
-  chatRoom: ChatRoom;
+    @Column({ default: false })
+    isRead: boolean;
+
+    @ManyToOne(
+        () => ChatRoom, //
+        (chatRoom) => chatRoom.chats,
+        {
+            nullable: false,
+        },
+    )
+    @JoinColumn()
+    chatRoom: ChatRoom;
+
+
 }

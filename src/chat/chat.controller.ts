@@ -1,59 +1,53 @@
-import { ClassSerializerInterceptor, Controller, Get, UseInterceptors, Request, UnauthorizedException, Param, Post, Body, Patch, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseInterceptors, Request, Get, Query, Patch, Param } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { RequestWithUser } from 'src/types/request';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
-import { CreateGroupDto } from './dto/create-chat-group';
-import { UpdateGroupDto } from './dto/update-chat-group';
+import { assertAuthenticated } from 'src/common/utils/auth.util';
+import { CreateChatRoomDto } from './dto/create-chat-room.dto';
+import { RequestWithUser } from 'src/types/request';
+import { UpdateChatRoomDto } from './dto/update-chat-room.dto';
 
 @Controller('chat')
-@UseInterceptors(ClassSerializerInterceptor)
 export class ChatController {
-    constructor(private readonly chatService: ChatService) { }
-
-    @Get('list')
-    getChatList(@Request() req: RequestWithUser, @Query('groupId') groupId: string) {
-        if (!req.user?.sub) {
-            throw new UnauthorizedException('인증이 필요합니다.');
-        }
-
-        const userId = req.user.sub;
-        return this.chatService.getChatList(userId, groupId);
-    }
-
-    @Get('room/:id')
-    getChatRoom(@Param() req: { id: string }) {
-        const roomId = req.id;
-        return this.chatService.getChatRoom(roomId);
-    }
-
-    @Post('group')
-    @UseInterceptors(TransactionInterceptor)
-    createGroupChat(@Body() body: CreateGroupDto, @Request() req: RequestWithUser & { queryRunner: any }) {
-        if (!req.user?.sub) {
-            throw new UnauthorizedException('인증이 필요합니다.');
-        }
-        return this.chatService.createGroupChat(body, req.user.sub, req.queryRunner);
-    }
+  constructor(private readonly chatService: ChatService) { }
 
 
-    @Get('group')
-    @UseInterceptors(TransactionInterceptor)
-    getGroupList(@Request() req: RequestWithUser) {
-        if (!req.user?.sub) {
-            throw new UnauthorizedException('인증이 필요합니다.');
-        }
+  @Get()
+  @UseInterceptors(TransactionInterceptor)
+  getChat(
+    @Query('id') roomId: number,
+    @Request() req: RequestWithUser
+  ) {
+    return this.chatService.getChat(roomId);
+  }
 
-        const userId = req.user.sub;
-        return this.chatService.getGroupList(userId);
-    }
+  @Post('room')
+  @UseInterceptors(TransactionInterceptor)
+  createGroupChat(
+    @Body() createChatRoomDto: CreateChatRoomDto,
+    @Request() req
+  ) {
+    return this.chatService.createChatRoom(createChatRoomDto, req.queryRunner);
+  }
+
+  @Get('room')
+  @UseInterceptors(TransactionInterceptor)
+  getChatRooms(
+    @Query('id') groupId: string,
+    @Request() req: RequestWithUser
+  ) {
+    const userId = assertAuthenticated(req);
+    return this.chatService.getChatRooms(userId, groupId);
+  }
+
+  @Patch('room')
+  @UseInterceptors(TransactionInterceptor)
+  updateChatRoom(
+    @Body() updateChatRoomDto: UpdateChatRoomDto,
+    @Request() req: RequestWithUser
+  ) {
+    const userId = assertAuthenticated(req);
+    return this.chatService.updateChatRoom(userId, updateChatRoomDto);
+  }
 
 
-    @Patch('group/:id')
-    @UseInterceptors(TransactionInterceptor)
-    moveChatToGroup(@Param('id', ParseIntPipe) id: number,
-        @Body() updateGroupDto: UpdateGroupDto,
-        @Request() res,) {
-
-        return this.chatService.moveChatToGroup(id, updateGroupDto, res.queryRunner);
-    }
 }

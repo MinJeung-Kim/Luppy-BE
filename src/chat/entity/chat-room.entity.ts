@@ -1,43 +1,28 @@
 import { BaseTable } from 'src/common/entity/base-table.entity';
-import { User } from 'src/user/entity/user.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Chat } from './chat.entity';
-import { ChatGroup } from './chat-group.entity';
+import { User } from 'src/user/entity/user.entity';
+import { ChatGroup } from 'src/chat-group/entity/chat-group.entity';
 
 @Entity()
 export class ChatRoom extends BaseTable {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  hostId: number;
+    @OneToMany(
+        () => Chat, //
+        (chat) => chat.chatRoom,
+        {
+            cascade: true,
+            nullable: true,
+        },
+    )
+    chats: Chat[];
 
-  @ManyToOne(() => User, (user) => user.hostedChatRooms)
-  host: User;
+    @ManyToMany(() => User, (user) => user.chatRooms)
+    @JoinTable()
+    memberIds: User[];
 
-  @ManyToMany(
-    () => User, //
-    (user) => user.chatRooms,
-  )
-  @JoinTable()
-  users: User[];
-
-  @OneToMany(
-    () => Chat, //
-    (chat) => chat.chatRoom,
-  )
-  chats: Chat[];
-
-  @ManyToOne(() => ChatGroup, (group) => group.chatRooms)
-  @JoinColumn()
-  chatGroup: ChatGroup;
+    @ManyToOne(() => ChatGroup, (chatGroup) => chatGroup.chatRooms)
+    chatGroup: ChatGroup;
 }

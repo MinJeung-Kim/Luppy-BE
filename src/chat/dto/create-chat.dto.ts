@@ -1,17 +1,16 @@
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateChatDto {
-  @IsString()
-  message: string;
 
-  @IsNumber()
-  @IsOptional()
-  roomId?: number;
+    @IsNotEmpty()
+    @IsNumber()
+    chatRoomId: number;
 
-  @IsString()
-  host: string;
+    @IsNotEmpty()
+    @IsNumber({}, { each: true })
+    memberIds: number[];
 
-  @IsArray()
-  @IsNumber({}, { each: true })
-  guests: number[];
+    @IsNotEmpty()
+    @IsString()
+    msg: string;
 }
