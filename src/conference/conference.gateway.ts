@@ -8,6 +8,8 @@ import { Socket } from 'socket.io';
 import { QueryRunner } from 'typeorm';
 import { corsOptions } from 'src/utils/cors-options';
 import { AuthService } from 'src/auth/auth.service';
+import { SocketService } from 'src/common/service/socket.service';
+import { BaseGateway } from 'src/common/gateway/base.gateway';
 
 export type TJoinUser = {
   id: number;
@@ -29,58 +31,22 @@ interface ConnectedClient {
   pingInterval: 25000,
   pingTimeout: 20000,
 })
-export class ConferenceGateway {
-  private readonly connectedClients = new Map<number, Set<string>>();
-  private readonly socketMap = new Map<string, Socket>();
+export class ConferenceGateway extends BaseGateway {
+  private readonly roomClients = new Map<number, ConnectedClient[]>();
 
   constructor(
     private readonly conferenceService: ConferenceService,
-    private readonly authService: AuthService,
-  ) { }
-
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
-    // 클라이언트가 연결을 끊었을 때 실행되는 로직
-    const user = client.data.user;
-    if (user) {
-      this.conferenceService.removeClient(user.sub);
-    }
-
-
-    this.socketMap.delete(client.id);
-
-    console.log('handleDisconnect : ', this.socketMap);
-
+    authService: AuthService,
+    socketService: SocketService,
+  ) {
+    super(authService, socketService);
   }
 
-  async handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
-    // 클라이언트가 연결을 시도했을 때 실행되는 로직
-    try {
-      const rawToken = client.handshake.auth.token;
-      if (!rawToken) {
-        client.disconnect();
-        return;
-      }
-
-      const payload = await this.authService.parseBearerToken(rawToken, false);
-
-      if (payload) {
-        client.data.user = payload;
-        this.conferenceService.registerClient(payload.sub, client);
-
-        const set = this.connectedClients.get(payload.sub) ?? new Set<string>();
-        this.connectedClients.set(payload.sub, set);
-        this.socketMap.set(client.id, client);
-      } else {
-        client.disconnect();
-        return;
-      }
-    } catch (e) {
-      console.log(e);
-
-      client.disconnect();
-    }
+  /**
+   * 클라이언트 연결 시 Conference 서비스에 등록
+   */
+  protected async onClientConnect(client: Socket, payload: any): Promise<void> {
+    this.conferenceService.registerClient(payload.sub, client);
   }
 
   @SubscribeMessage('createConferenceRoom')

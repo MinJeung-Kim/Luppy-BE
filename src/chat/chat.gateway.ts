@@ -8,6 +8,7 @@ import { WsTransactionInterceptor } from 'src/common/interceptor/ws-transaction.
 import { WsQueryRunner } from 'src/common/decorator/ws-query-runner.decorator';
 import { QueryRunner } from 'typeorm';
 import { SocketService } from 'src/common/service/socket.service';
+import { BaseGateway } from 'src/common/gateway/base.gateway';
 
 @WebSocketGateway({
   cors: corsOptions,
@@ -15,49 +16,14 @@ import { SocketService } from 'src/common/service/socket.service';
   pingInterval: 25000,
   pingTimeout: 20000,
 })
-export class ChatGateway {
+export class ChatGateway extends BaseGateway {
 
   constructor(
     private readonly chatService: ChatService,
-    private readonly authService: AuthService,
-    private readonly socketService: SocketService,
-  ) { }
-
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
-    // 클라이언트가 연결을 끊었을 때 실행되는 로직
-    const user = client.data.user;
-    if (user) {
-      // remove only this socket
-      this.socketService.removeSocket(client.id);
-    }
-  }
-
-  async handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
-    // 클라이언트가 연결을 시도했을 때 실행되는 로직
-    try {
-      const rawToken = client.handshake.auth.token;
-      if (!rawToken) {
-        client.disconnect();
-        return;
-      }
-
-      const payload = await this.authService.parseBearerToken(rawToken, false);
-
-      if (payload) {
-        client.data.user = payload;
-        this.socketService.registerClient(payload.sub, client);
-
-      } else {
-        client.disconnect();
-        return;
-      }
-    } catch (e) {
-      console.log(e);
-
-      client.disconnect();
-    }
+    authService: AuthService,
+    socketService: SocketService,
+  ) {
+    super(authService, socketService);
   }
 
   @SubscribeMessage('joinChatRoom')
