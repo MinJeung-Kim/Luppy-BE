@@ -7,6 +7,7 @@ import { UseInterceptors } from '@nestjs/common';
 import { WsTransactionInterceptor } from 'src/common/interceptor/ws-transaction.interceptor';
 import { WsQueryRunner } from 'src/common/decorator/ws-query-runner.decorator';
 import { QueryRunner } from 'typeorm';
+import { SocketService } from 'src/common/service/socket.service';
 
 @WebSocketGateway({
   cors: corsOptions,
@@ -19,6 +20,7 @@ export class ChatGateway {
   constructor(
     private readonly chatService: ChatService,
     private readonly authService: AuthService,
+    private readonly socketService: SocketService,
   ) { }
 
   handleDisconnect(client: Socket) {
@@ -27,7 +29,7 @@ export class ChatGateway {
     const user = client.data.user;
     if (user) {
       // remove only this socket
-      this.chatService.removeSocket(client.id);
+      this.socketService.removeSocket(client.id);
     }
   }
 
@@ -45,7 +47,7 @@ export class ChatGateway {
 
       if (payload) {
         client.data.user = payload;
-        this.chatService.registerClient(payload.sub, client);
+        this.socketService.registerClient(payload.sub, client);
 
       } else {
         client.disconnect();

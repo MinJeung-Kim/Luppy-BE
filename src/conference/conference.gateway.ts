@@ -17,6 +17,12 @@ export type TJoinUser = {
   isVideoOn: boolean;
 }
 
+
+interface ConnectedClient {
+  userId: number;
+  socket: string;
+}
+
 @WebSocketGateway({
   cors: corsOptions,
   transports: ['websocket'],      // 폴링 비활성화 
@@ -24,6 +30,9 @@ export type TJoinUser = {
   pingTimeout: 20000,
 })
 export class ConferenceGateway {
+  private readonly connectedClients = new Map<number, Set<string>>();
+  private readonly socketMap = new Map<string, Socket>();
+
   constructor(
     private readonly conferenceService: ConferenceService,
     private readonly authService: AuthService,
@@ -36,6 +45,12 @@ export class ConferenceGateway {
     if (user) {
       this.conferenceService.removeClient(user.sub);
     }
+
+
+    this.socketMap.delete(client.id);
+
+    console.log('handleDisconnect : ', this.socketMap);
+
   }
 
   async handleConnection(client: Socket) {
@@ -53,6 +68,10 @@ export class ConferenceGateway {
       if (payload) {
         client.data.user = payload;
         this.conferenceService.registerClient(payload.sub, client);
+
+        const set = this.connectedClients.get(payload.sub) ?? new Set<string>();
+        this.connectedClients.set(payload.sub, set);
+        this.socketMap.set(client.id, client);
       } else {
         client.disconnect();
         return;

@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { CommonService } from './common.service';
+import { SocketService } from './service/socket.service';
 
 @Module({
   imports: [],
   controllers: [],
-  providers: [CommonService],
-  exports: [CommonService],
+  providers: [CommonService, SocketService],
+  exports: [CommonService, SocketService],
 })
-export class CommonModule {}
+export class CommonModule { }
