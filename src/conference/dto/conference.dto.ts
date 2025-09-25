@@ -6,7 +6,7 @@ export class ConferenceDto {
     roomId: string;
 
     @IsString()
-    host: string;
+    host: number;
 
     @IsArray()
     @IsNumber({}, { each: true })

@@ -32,8 +32,6 @@ interface ConnectedClient {
   pingTimeout: 20000,
 })
 export class ConferenceGateway extends BaseGateway {
-  private readonly roomClients = new Map<number, ConnectedClient[]>();
-
   constructor(
     private readonly conferenceService: ConferenceService,
     authService: AuthService,
@@ -42,32 +40,25 @@ export class ConferenceGateway extends BaseGateway {
     super(authService, socketService);
   }
 
-  /**
-   * 클라이언트 연결 시 Conference 서비스에 등록
-   */
-  protected async onClientConnect(client: Socket, payload: any): Promise<void> {
-    this.conferenceService.registerClient(payload.sub, client);
-  }
-
   @SubscribeMessage('createConferenceRoom')
   @UseInterceptors(WsTransactionInterceptor)
   async handleConference(
-    @MessageBody() body: ConferenceDto,
+    @MessageBody() body: { roomId: string, guests: number[] },
     @ConnectedSocket() client: Socket,
     @WsQueryRunner() qr: QueryRunner,
   ) {
     await this.conferenceService.createConferenceRoom(body, client, qr);
   }
 
-  @SubscribeMessage('joinConferenceRoom')
-  @UseInterceptors(WsTransactionInterceptor)
-  async handleJoinConferenceRoom(
-    @MessageBody() body: ConferenceDto,
-    @ConnectedSocket() client: Socket,
-    @WsQueryRunner() qr: QueryRunner,
-  ) {
-    await this.conferenceService.joinConferenceRoom(body, client, qr);
-  }
+  // @SubscribeMessage('joinConferenceRoom')
+  // @UseInterceptors(WsTransactionInterceptor)
+  // async handleJoinConferenceRoom(
+  //   @MessageBody() body: { roomId: string, guests: number[] },
+  //   @ConnectedSocket() client: Socket,
+  //   @WsQueryRunner() qr: QueryRunner,
+  // ) {
+  //   await this.conferenceService.joinConferenceRoom(body, client, qr);
+  // }
 
   @SubscribeMessage('sendOffer')
   @UseInterceptors(WsTransactionInterceptor)

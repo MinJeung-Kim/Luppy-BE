@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConferenceDto } from './dto/conference.dto';
 import { Socket } from 'socket.io';
 import { QueryRunner, Repository } from 'typeorm';
@@ -6,31 +6,24 @@ import { WsException } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entity/user.entity';
 import { TJoinUser } from './conference.gateway';
+import { SocketService } from 'src/common/service/socket.service';
 
 @Injectable()
 export class ConferenceService {
-  private readonly connectedClients = new Map<number, Socket>();
+  private readonly connectedClients = new Map<string, Socket>();
 
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly socketService: SocketService,
   ) { }
-
-
-  registerClient(userId: number, client: Socket) {
-    this.connectedClients.set(userId, client);
-  }
-
-  removeClient(userId: number) {
-    this.connectedClients.delete(userId);
-  }
 
 
   async findHostAndGuests(body: ConferenceDto, qr: QueryRunner) {
     const { host, guests } = body;
 
     const hostUser = await qr.manager.findOne(User, {
-      where: { id: parseInt(host) }
+      where: { id: host }
     });
 
     const guestUsers = await Promise.all(
@@ -41,37 +34,53 @@ export class ConferenceService {
     return { hostUser, guestUsers };
   }
 
-  async createConferenceRoom(body: ConferenceDto, client: Socket, qr: QueryRunner) {
-    const { hostUser, guestUsers } = await this.findHostAndGuests(body, qr);
+  async createConferenceRoom(body: { roomId: string, guests: number[] }, client: Socket, qr: QueryRunner) {
+    const userId = client.data.user.sub;
+    const user = await qr.manager.findOne(User, { where: { id: userId } });
 
-    if (!hostUser) {
-      throw new WsException('호스트 사용자를 찾을 수 없습니다.');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    const validGuestUsers = guestUsers.filter(user => user !== null);
-    if (validGuestUsers.length !== body.guests.length) {
-      throw new WsException('일부 게스트 사용자를 찾을 수 없습니다.');
-    }
+    // 게스트 정보를 데이터베이스에서 조회
+    const guestUsers = await Promise.all(
+      body.guests.map(guestId =>
+        qr.manager.findOne(User, { where: { id: guestId } })
+      )
+    );
+
+    // 존재하지 않는 게스트 필터링
+    const validGuestUsers = guestUsers.filter(guest => guest !== null);
+
+    this.connectedClients.set(body.roomId, client)
 
     client.join(body.roomId)
     client.emit('createConferenceRoom', { message: "회의실이 생성되었습니다." });
 
+    // 호스트 정보
+    const hostInfo = {
+      id: user.id,
+      name: user.name,
+      profile: user.profile,
+      isMicOn: true,
+      isVideoOn: true
+    };
+
     // 게스트들에게 초대 알림 보내기
     validGuestUsers.forEach(guest => {
-      const guestClient = this.connectedClients.get(guest.id);
-      const guestInfo = {
-        id: guest.id,
-        name: guest.name,
-        profile: guest.profile,
-        isMicOn: true,
-        isVideoOn: true
-      }
-      if (guestClient) {
-        guestClient.emit('conferenceInvitation', {
-          host: guestInfo, roomId: body.roomId
+      // SocketService를 사용해서 게스트의 소켓들을 찾기
+      const guestSockets = this.socketService.getSocketsByUser(guest.id);
 
+      console.log(`게스트 ${guest.name}에게 초대 알림 전송 중...`, guestSockets.length > 0 ? `${guestSockets.length}개 연결` : '연결 안됨');
+
+      // 게스트의 모든 소켓에 초대 알림 전송
+      guestSockets.forEach(guestSocket => {
+        guestSocket.emit('conferenceInvitation', {
+          host: hostInfo,
+          roomId: body.roomId,
+          message: `${user.name}님이 회의실에 초대했습니다.`
         });
-      }
+      });
     });
   }
 
@@ -79,7 +88,7 @@ export class ConferenceService {
     const { host } = body;
 
     const hostUser = await qr.manager.findOne(User, {
-      where: { id: parseInt(host) }
+      where: { id: host }
     });
 
     if (!hostUser) {
