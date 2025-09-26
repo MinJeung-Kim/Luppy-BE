@@ -84,22 +84,23 @@ export class ConferenceService {
     });
   }
 
-  async joinConferenceRoom(body: ConferenceDto, client: Socket, qr: QueryRunner) {
-    const { host } = body;
+  async joinConferenceRoom(body: { roomId: string }, client: Socket, qr: QueryRunner) {
+    const { roomId } = body;
 
-    const hostUser = await qr.manager.findOne(User, {
-      where: { id: host }
-    });
+    const userId = client.data.user.sub;
+    const user = await qr.manager.findOne(User, { where: { id: userId } });
 
-    if (!hostUser) {
-      throw new WsException('호스트 사용자를 찾을 수 없습니다.');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+
     const joinUser = {
-      id: hostUser.id,
-      name: hostUser.name,
-      email: hostUser.email,
-      phone: hostUser.phone,
-      profile: hostUser.profile
+      id: userId,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      profile: user.profile
     }
 
     // 클라이언트를 방에 참가시킴

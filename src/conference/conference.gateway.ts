@@ -50,15 +50,15 @@ export class ConferenceGateway extends BaseGateway {
     await this.conferenceService.createConferenceRoom(body, client, qr);
   }
 
-  // @SubscribeMessage('joinConferenceRoom')
-  // @UseInterceptors(WsTransactionInterceptor)
-  // async handleJoinConferenceRoom(
-  //   @MessageBody() body: { roomId: string, guests: number[] },
-  //   @ConnectedSocket() client: Socket,
-  //   @WsQueryRunner() qr: QueryRunner,
-  // ) {
-  //   await this.conferenceService.joinConferenceRoom(body, client, qr);
-  // }
+  @SubscribeMessage('joinConferenceRoom')
+  @UseInterceptors(WsTransactionInterceptor)
+  async handleJoinConferenceRoom(
+    @MessageBody() body: { roomId: string },
+    @ConnectedSocket() client: Socket,
+    @WsQueryRunner() qr: QueryRunner,
+  ) {
+    await this.conferenceService.joinConferenceRoom(body, client, qr);
+  }
 
   @SubscribeMessage('sendOffer')
   @UseInterceptors(WsTransactionInterceptor)
