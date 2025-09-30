@@ -66,14 +66,36 @@ export class ChatService {
         return qr.manager.save(chatRoom);
     }
 
-    async getChatRooms(userId: number, groupId: string) {
+    async getChatRooms(userId: number, groupId: string, page: number, limit: number) {
         const qb = this.chatRoomRepository
             .createQueryBuilder('chatRoom')
             // 내가 속한 방만 필터링 (필터용 alias: me)
             .innerJoin('chatRoom.memberIds', 'me', 'me.id = :userId', { userId })
+            // 내가 속한 방의 마지막 메시지 조인 
             // 응답용으로 멤버 전체를 로드 (표시용 alias: members)
             .leftJoinAndSelect('chatRoom.memberIds', 'members')
             .leftJoinAndSelect('chatRoom.chatGroup', 'chatGroup')
+            // 마지막 메시지 조인 추가
+            .leftJoin(
+                qb => qb
+                    .select([
+                        'chat.id as id',
+                        'chat.msg as msg',
+                        'chat.createdAt as createdAt',
+                        'chat.chatRoomId as chatRoomId',
+                        'chat.sender as sender'
+                    ])
+                    .from(Chat, 'chat')
+                    .where('chat.id IN ' +
+                        qb.subQuery()
+                            .select('MAX(subChat.id)')
+                            .from(Chat, 'subChat')
+                            .groupBy('subChat.chatRoomId')
+                            .getQuery()
+                    ),
+                'lastChat',
+                'lastChat.chatRoomId = chatRoom.id'
+            )
             .select([
                 'chatRoom',               // 채팅방 전체 컬럼
                 'members.id',
@@ -84,21 +106,40 @@ export class ChatService {
                 'chatGroup.id',
                 'chatGroup.name',
             ])
-
+            .addSelect('lastChat.msg', 'lastChatMsg')
             .distinct(true)             // 조인으로 인한 중복 방 제거
-            .orderBy('chatRoom.updatedAt', 'DESC');
+            // .orderBy('chatRoom.updatedAt', 'DESC');
+            .skip((page - 1) * limit)
+            .take(limit);
+
 
         if (groupId !== 'all-inbox') {
             qb.andWhere('chatRoom.chatGroup = :groupId', { groupId: Number(groupId) });
         }
 
+        // ✅ alias 컬럼을 받기 위해 raw+entities 동시 획득
+        const { raw, entities } = await qb.getRawAndEntities();
+
+        // ✅ 카운트는 별도 쿼리
+        const countQb = this.chatRoomRepository
+            .createQueryBuilder('chatRoom')
+            .innerJoin('chatRoom.memberIds', 'me', 'me.id = :userId', { userId });
+
+
         const rooms = await qb.getMany();
 
-        // 필드를 memberIds -> members 로 변경
-        return rooms.map(({ memberIds, ...rest }) => ({
-            ...rest,
-            members: memberIds,
-        }));
+        const chatList = entities.map((room, i) => {
+            const { memberIds, ...rest } = room as any;
+            return {
+                ...rest,
+                members: memberIds,
+                lastChatMsg: raw[i]?.lastChatMsg ?? '대화를 시작해 보세요.',
+            };
+        });
+        return {
+            chatList,
+            totalPages: Math.ceil(await qb.getCount() / limit)
+        };
     }
 
     async updateChatRoom(userId: number, updateChatRoomDto: UpdateChatRoomDto) {

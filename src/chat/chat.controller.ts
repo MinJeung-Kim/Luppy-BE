@@ -33,10 +33,12 @@ export class ChatController {
   @UseInterceptors(TransactionInterceptor)
   getChatRooms(
     @Query('id') groupId: string,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
     @Request() req: RequestWithUser
   ) {
     const userId = assertAuthenticated(req);
-    return this.chatService.getChatRooms(userId, groupId);
+    return this.chatService.getChatRooms(userId, groupId, page, limit);
   }
 
   @Patch('room')
