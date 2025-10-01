@@ -71,7 +71,6 @@ export class ChatService {
             .createQueryBuilder('chatRoom')
             // 내가 속한 방만 필터링 (필터용 alias: me)
             .innerJoin('chatRoom.memberIds', 'me', 'me.id = :userId', { userId })
-            // 내가 속한 방의 마지막 메시지 조인 
             // 응답용으로 멤버 전체를 로드 (표시용 alias: members)
             .leftJoinAndSelect('chatRoom.memberIds', 'members')
             .leftJoinAndSelect('chatRoom.chatGroup', 'chatGroup')
@@ -94,7 +93,7 @@ export class ChatService {
                             .getQuery()
                     ),
                 'lastChat',
-                'lastChat.chatRoomId = chatRoom.id'
+                'lastChat.chatRoomId = chatRoom.id',
             )
             .select([
                 'chatRoom',               // 채팅방 전체 컬럼
@@ -108,7 +107,7 @@ export class ChatService {
             ])
             .addSelect('lastChat.msg', 'lastChatMsg')
             .distinct(true)             // 조인으로 인한 중복 방 제거
-            // .orderBy('chatRoom.updatedAt', 'DESC');
+            .orderBy('chatRoom.updatedAt', 'DESC')
             .skip((page - 1) * limit)
             .take(limit);
 
@@ -120,21 +119,40 @@ export class ChatService {
         // ✅ alias 컬럼을 받기 위해 raw+entities 동시 획득
         const { raw, entities } = await qb.getRawAndEntities();
 
-        // ✅ 카운트는 별도 쿼리
-        const countQb = this.chatRoomRepository
-            .createQueryBuilder('chatRoom')
-            .innerJoin('chatRoom.memberIds', 'me', 'me.id = :userId', { userId });
+        // 디버깅: 실제 쿼리 결과 확인
+        console.log('=== DEBUG: Raw query results ===');
+        raw.forEach((r, index) => {
+            console.log(`Index ${index}:`, {
+                chatRoomId: r.chatRoom_id,
+                lastChatId: r.lastChat_id,
+                lastChatMsg: r.lastChatMsg,
+                lastChatRoomId: r.lastChat_chatRoomId
+            });
+        });
 
+        console.log('=== DEBUG: Entities ===');
+        entities.forEach((entity, index) => {
+            console.log(`Entity ${index}:`, {
+                roomId: entity.id,
+                roomName: `ChatRoom ${entity.id}`
+            });
+        });
 
-        const rooms = await qb.getMany();
+        // Raw 데이터를 채팅룸 ID 기준으로 맵핑
+        const rawByRoomId = new Map();
+        raw.forEach(r => {
+            rawByRoomId.set(r.chatRoom_id, r);
+        });
 
-        const chatList = entities.map((room, i) => {
-            const { memberIds, ...rest } = room as any;
-            return {
+        const chatList = entities.map((room) => {
+            const { memberIds, ...rest } = room;
+            const rawData = rawByRoomId.get(room.id);
+            const result = {
                 ...rest,
                 members: memberIds,
-                lastChatMsg: raw[i]?.lastChatMsg ?? '대화를 시작해 보세요.',
+                lastChatMsg: rawData?.lastChatMsg ?? '대화를 시작해 보세요.',
             };
+            return result;
         });
         return {
             chatList,
