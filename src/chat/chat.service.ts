@@ -106,6 +106,7 @@ export class ChatService {
                 'chatGroup.name',
             ])
             .addSelect('lastChat.msg', 'lastChatMsg')
+            .addSelect('lastChat.createdAt', 'lastChatCreatedAt')
             .distinct(true)             // 조인으로 인한 중복 방 제거
             .orderBy('chatRoom.updatedAt', 'DESC')
             .skip((page - 1) * limit)
@@ -118,25 +119,6 @@ export class ChatService {
 
         // ✅ alias 컬럼을 받기 위해 raw+entities 동시 획득
         const { raw, entities } = await qb.getRawAndEntities();
-
-        // 디버깅: 실제 쿼리 결과 확인
-        console.log('=== DEBUG: Raw query results ===');
-        raw.forEach((r, index) => {
-            console.log(`Index ${index}:`, {
-                chatRoomId: r.chatRoom_id,
-                lastChatId: r.lastChat_id,
-                lastChatMsg: r.lastChatMsg,
-                lastChatRoomId: r.lastChat_chatRoomId
-            });
-        });
-
-        console.log('=== DEBUG: Entities ===');
-        entities.forEach((entity, index) => {
-            console.log(`Entity ${index}:`, {
-                roomId: entity.id,
-                roomName: `ChatRoom ${entity.id}`
-            });
-        });
 
         // Raw 데이터를 채팅룸 ID 기준으로 맵핑
         const rawByRoomId = new Map();
@@ -151,6 +133,7 @@ export class ChatService {
                 ...rest,
                 members: memberIds,
                 lastChatMsg: rawData?.lastChatMsg ?? '대화를 시작해 보세요.',
+                lastChatCreatedAt: rawData?.lastChatCreatedAt ?? null,
             };
             return result;
         });
