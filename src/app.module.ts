@@ -22,6 +22,7 @@ import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter'
 import { ConferenceModule } from './conference/conference.module';
 import { ChatModule } from './chat/chat.module';
 import { ChatGroupModule } from './chat-group/chat-group.module';
+import { CanvasModule } from './canvas/canvas.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ChatGroupModule } from './chat-group/chat-group.module';
     ConferenceModule,
     ChatModule,
     ChatGroupModule,
+    CanvasModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
