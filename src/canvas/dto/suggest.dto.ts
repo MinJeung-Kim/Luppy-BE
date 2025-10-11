@@ -1,19 +1,12 @@
-import { IsString, IsIn, IsOptional, IsArray } from 'class-validator';
+import { IsNotEmpty, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { HintDto } from './hint.dto';
 
 export class SuggestDto {
-    @IsString()
-    @IsIn(['rectangle', 'rounded', 'circle', 'arrow', 'other'])
-    shape!: 'rectangle' | 'rounded' | 'circle' | 'arrow' | 'other';
+    @IsNotEmpty()
+    file: Express.Multer.File;
 
-    @IsString()
-    @IsOptional()
-    context?: string;
-
-    @IsArray()
-    @IsOptional()
-    coords?: Array<{ x: number; y: number }>;
-
-    @IsString()
-    @IsOptional()
-    color?: string;
+    @ValidateNested()
+    @Type(() => HintDto)
+    hint: HintDto;
 }

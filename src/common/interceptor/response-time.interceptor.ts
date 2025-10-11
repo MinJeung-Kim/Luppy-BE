@@ -24,7 +24,10 @@ export class ResponseTimeInterceptor implements NestInterceptor {
         const resTime = Date.now();
         const diff = resTime - reqTime;
 
-        if (diff > 1000) {
+        // Canvas 분석 요청은 30초까지 허용, 다른 요청은 1초까지
+        const timeoutLimit = req.url.includes('/canvas/analyze') ? 30000 : 1000;
+
+        if (diff > timeoutLimit) {
           console.warn(
             `!!!TIMEOUT!!![${req.method}] ${req.url} - Response Time: ${diff}ms`,
           );

@@ -7,6 +7,7 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors(corsOptions);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // 정의하지 않은 값은 제거
