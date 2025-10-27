@@ -243,6 +243,7 @@ export class ChatService {
             sender: {
                 id: userId,
                 name: user.name,
+                email: user.email,
                 profile: user.profile,
             },
         };

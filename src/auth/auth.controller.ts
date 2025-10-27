@@ -55,6 +55,7 @@ export class AuthController {
       sameSite: 'strict',
     });
 
+
     res.status(200).json({ message: 'Logged out' });
   }
 }
